@@ -2,7 +2,7 @@ import os
 import time
 import numpy as np
 from optimparallel import minimize_parallel
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_matrix, diags
 from scipy.sparse.linalg import eigs
 from numpy import linalg as LA
 from scipy.sparse.linalg import expm_multiply, expm
@@ -34,12 +34,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # Command line arguments
     parser.add_argument("-L", "--L", type=int, default=5, help="System size")
-    parser.add_argument("-p", "--p", type=int, default=3, help="Number of ansatz steps")
-#    parser.add_argument("-n", "--num_iter", type=int, default=1, help="Number of times to minimize (mean)")
+    parser.add_argument("-t", "--t", type=int, default=0, help="Time to start at")
+    parser.add_argument("-p", "--p", type=int, default=1, help="Number of ansatz steps")
     args = parser.parse_args()
     L = args.L
+    t = args.t
     p = args.p
-#    n = args.num_iter
 
     Sz = []
     for i in range(L):
@@ -72,21 +72,13 @@ if __name__ == "__main__":
                 sprs[j, j] = v(i) * v(k)
             _.append(sprs)    
         Heis.append(_)
-
-    def TrotterEvolve(tf, nt, init):
-        dt = tf / nt
-        UOdd = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(0, L, 2)]) / 4) # since Python indices start at 0, this is actually even
-        UEven = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(1, L, 2)]) / 4) # since Python indices start at 0, this is actually the odd indices
-        UTrotter = UEven @ UOdd
-        psi_trot = init
-        for i in range(nt):
-            psi_trot = UTrotter @ psi_trot
-        return psi_trot
-
     
-    H = sum([Heis[i][(i+1)%L] for i in range(L)]) / 4
-    tf = 50
-    dt = tf / 200
+    # H = sum([Heis[i][(i+1)%L] for i in range(L)]) / 4
+    H = (sum([Heis[i][(i+1)%L] for i in range(L)]) + sum([diags(Heis[i][(i+2)%L].diagonal()) for i in range(L)])) / 4 # H plus Z_i Z_{i+2}
+
+    tf = 20
+    ts = 80
+    dt = tf / ts
     Nt = int(tf / dt)
     c = [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
     UnitVector = lambda c: np.eye(2**L)[c-1]
@@ -98,66 +90,55 @@ if __name__ == "__main__":
         # scipy.sparse.linalg.expm_multiply
         revos[i+1] = expm_multiply(-1j * H * dt, revos[i])
         # revos[i+1] = expm(-1j * H * dt) @ revos[i]
-    Szt = []
-    for i in range(len(revos)):
-        Szt.append(np.conj(revos[i]) @ Sz[0] @ revos[i] / 2)
 
-
-    def Ansatz(params):
+    def Ansatz(params, p):
         # check for correct length of params
         psi_ansz = init
         for i in range(p): # len(params) // L
             for j in range(0, L, 2):
                 # odd first, then even. Apply to left
-                psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+                psi_ansz = expm(-1j * params[(2*L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
             for j in range(1, L, 2):
-                psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+                psi_ansz = expm(-1j * params[(2*L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+            for j in range(L):
+                psi_ansz = expm(-1j * params[(2*L*i)+L+j] * diags(Heis[j][(j+2)%L].diagonal()).tocsc()) @ psi_ansz
         return psi_ansz
 
-    def Fidelity(x, target):
-        psi_ansz = Ansatz(x)
+    def Fidelity(x, target, p):
+        psi_ansz = Ansatz(x, p)
         return 1 - abs(np.conj(target) @ psi_ansz)**2
-
-    def Loss(x, target):
-        psi_ansz = Ansatz(x)
-        Sz_ansz = np.conj(psi_ansz) @ (Sz[0] + Sz[1] + Sz[2] + Sz[3] + Sz[4]) @ psi_ansz / 2
-        Sz_ex = np.conj(target) @ (Sz[0] + Sz[1] + Sz[2] + Sz[3] + Sz[4]) @ target / 2
-        return abs(Sz_ansz - Sz_ex)
 
     if not os.path.exists(f'results_{L}'):
         os.makedirs(f'results_{L}')
-    f = open(f'./results_{L}/results_{L}_{p}.txt', 'w')
+    f = open(f'./results_{L}/results_{L}_{p}.txt', 'a')
 
-    start = time.time()
+    def OptimizeFidelity(t, p):
+        # load in previous x if exists
+        if os.path.exists(f'./results_{L}/temp_x_{L}_{t}_{p}.npy'):
+            f.write('Loading in previous x array\n')
+            with open(f'./results_{L}/temp_x_{L}_{t}_{p}.npy', 'rb') as arrf:
+                init_params = np.load(arrf)
+        else:
+            init_params = np.random.uniform(0, 2*np.pi, 2*L*p)
 
-    # load in previous x if exists
-    if os.path.exists(f'./results_{L}/temp_x_{L}_{p}.npy'):
-        f.write('Loading in previous x array\n')
-        with open(f'./results_{L}/temp_x_{L}_{p}.npy', 'rb') as arrf:
-            init_params = np.load(arrf)
-    else:
-        init_params = np.random.uniform(0, 2*np.pi, L*p)
+        sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(revos[t], p), parallel={'loginfo': True, 'time':True}, options={'maxiter':200})
+        if (sol.message == b'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'):
+            # ran out of time
+            f.write('Ran out of time when p={p} and time t={t}\n')
+            with open(f'./results_{L}/temp_x_{L}_{t}_{p}.npy', 'wb') as arrf:
+                np.save(arrf, sol.x)
+                os.system(f'sbatch job-heis-did2.sh {L} {t} {p}')
+            f.close()
+            quit()
+        else:
+            f.write(f'{sol.fun}, {t*tf/ts}\n')
+            return sol.fun
 
-    sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(revos[-1]), parallel={'loginfo': True, 'time':True}, options={'maxiter':200})
-
-    if (sol.message == b'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'):
-        # ran out of time
-        f.write(str(sol))
-        f.write('Ran out of time\n')
-        with open(f'./results_{L}/temp_x_{L}_{p}.npy', 'wb') as arrf:
-            np.save(arrf, sol.x)
-            os.system(f'sbatch job-heis-did2.sh {L} {p}')
-        f.close()
-        quit()
-
-    else:
-        f.write(str(sol))
-    
-#        if os.path.exists(f'./results_{L}/temp_x_{L}_{p}.npy'):
-#            os.remove(f'./result_{L}/temp_x_{L}_{p}.npy')	
-
-        end = time.time()
-        f.write(f'\n{sol.fun}\n')
-        f.write(f'Total time taken: {end-start}s. Time per run: {(end-start)}\n')
+    i = t
+    while (i < len(revos)):
+        # print(i, p)
+        fun = OptimizeFidelity(i, p)
+        # f.write(f'\n Converged: Fidelity = {fun} at time t={i} for p={p} \n')
+        i += 1
 
     f.close()

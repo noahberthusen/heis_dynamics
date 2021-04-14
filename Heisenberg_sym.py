@@ -41,6 +41,9 @@ if __name__ == "__main__":
     p = args.p
 #    n = args.num_iter
 
+    if not(L % 2 == 0):
+        exit()
+
     Sz = []
     for i in range(L):
         sprs = csc_matrix((2**L, 2**L), dtype=np.int8)
@@ -72,17 +75,6 @@ if __name__ == "__main__":
                 sprs[j, j] = v(i) * v(k)
             _.append(sprs)    
         Heis.append(_)
-
-    def TrotterEvolve(tf, nt, init):
-        dt = tf / nt
-        UOdd = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(0, L, 2)]) / 4) # since Python indices start at 0, this is actually even
-        UEven = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(1, L, 2)]) / 4) # since Python indices start at 0, this is actually the odd indices
-        UTrotter = UEven @ UOdd
-        psi_trot = init
-        for i in range(nt):
-            psi_trot = UTrotter @ psi_trot
-        return psi_trot
-
     
     H = sum([Heis[i][(i+1)%L] for i in range(L)]) / 4
     tf = 50
@@ -109,9 +101,9 @@ if __name__ == "__main__":
         for i in range(p): # len(params) // L
             for j in range(0, L, 2):
                 # odd first, then even. Apply to left
-                psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+                psi_ansz = expm(-1j * params[(2*i)] * Heis[j][(j+1)%L]) @ psi_ansz
             for j in range(1, L, 2):
-                psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+                psi_ansz = expm(-1j * params[(2*i)+1] * Heis[j][(j+1)%L]) @ psi_ansz
         return psi_ansz
 
     def Fidelity(x, target):
@@ -136,7 +128,7 @@ if __name__ == "__main__":
         with open(f'./results_{L}/temp_x_{L}_{p}.npy', 'rb') as arrf:
             init_params = np.load(arrf)
     else:
-        init_params = np.random.uniform(0, 2*np.pi, L*p)
+        init_params = np.random.uniform(0, 2*np.pi, 2*p)
 
     sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(revos[-1]), parallel={'loginfo': True, 'time':True}, options={'maxiter':200})
 
