@@ -101,9 +101,11 @@ if __name__ == "__main__":
         psi_ansz = init
         for i in range(p): # len(params) // L
             for j in range(0, L, 2):
-                psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
             for j in range(1, L, 2):
-                psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
             # for j in range(L):
             #     psi_ansz = expm(-1j * params[(2*L*i)+L+j] * diags(Heis[j][(j+2)%L].diagonal()).tocsc()) @ psi_ansz
         return psi_ansz
