@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.sparse import csc_matrix, diags
-from scipy.sparse.linalg import eigs
+from scipy.sparse.linalg import eigs, expm_multiply
 from numpy import linalg as LA
 from scipy.linalg import expm
 import matplotlib.pyplot as plt
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     for i in range(L):
         sprs = csc_matrix((2**L, 2**L), dtype=np.int8)
         for j in range(2**L):
-            sprs[j, j] = 2*int(format(j, '0{}b'.format(L))[i])-1
+            sprs[j, j] = 1-2*int(format(j, '0{}b'.format(L))[i])
         Sz.append(sprs)
     SzTot = sum(Sz)
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             sprs = csc_matrix((2**L, 2**L), dtype=np.int8)
             for j in range(2**L):
                 h = FlipFlop(j, i, k)
-                v = lambda i: 2*int(format(j, '0{}b'.format(L))[i])-1 
+                v = lambda i: 1-2*int(format(j, '0{}b'.format(L))[i])
                 if (h != -1):
                     sprs[j, h] = 2
                     sprs[h, j] = 2
@@ -84,14 +84,21 @@ if __name__ == "__main__":
     H = sum([Heis[i][(i+1)%L] for i in range(L)]) / 4
 
     c = [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
-    UnitVector = lambda c: np.eye(2**L)[c-1]
+    UnitVector = lambda c: np.eye(2**L)[c]
     init = UnitVector(int(''.join(c), 2))
 
     def TrotterEvolve(dt, nt, init):
-        UOdd = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(0, L, 2)]) / 4) # since Python indices start at 0, this is actually even
-        UEven = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(1, L, 2)]) / 4) # since Python indices start at 0, this is actually the odd indices
-        # UZ = expm(-1j * dt * sum([diags(Heis[i][(i+2)%L].diagonal()) for i in range(L)]) / 2)
-        UTrotter = UEven @ UOdd 
+        if (L % 2 == 0):
+            UOdd = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(0, L-1, 2)]) / 4) # 0 indexing, this is actually even indices
+            UEven = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(1, L, 2)]) / 4) # 0 indexing, this is actually the odd indices
+            UTrotter = UOdd @ UEven
+            # UZ = expm(-1j * dt * sum([diags(Heis[i][(i+2)%L].diagonal()) for i in range(L)]) / 2)
+            # UTrotter = UEven @ UOdd @ UZ
+        else:
+            UOdd = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(0, L-1, 2)]) / 4)
+            UEven = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(1, L, 2)]) / 4)
+            UBdy = expm(-1j * dt * Heis[L-1][0] / 4)
+            UTrotter = UBdy @ UOdd @ UEven
         psi_trot = init
         for i in range(nt):
             psi_trot = UTrotter @ psi_trot
@@ -99,15 +106,18 @@ if __name__ == "__main__":
 
     def Ansatz(params, p):
         psi_ansz = init
-        for i in range(p): # len(params) // L
-            for j in range(0, L, 2):
-                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
-            for j in range(1, L, 2):
-                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
-            # for j in range(L):
-            #     psi_ansz = expm(-1j * params[(2*L*i)+L+j] * diags(Heis[j][(j+2)%L].diagonal()).tocsc()) @ psi_ansz
+        for i in range(p):
+            if (L % 2 == 0):
+                for j in range(1, L, 2):
+                    psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]/4, psi_ansz)
+                for j in range(0, L-1, 2):
+                    psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]/4, psi_ansz)
+            else:
+                for j in range(1, L, 2):
+                    psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]/4, psi_ansz)
+                for j in range(0, L-1, 2):
+                    psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]/4, psi_ansz)
+                psi_ansz = expm_multiply(-1j * params[(L*i)+L-1] * Heis[L-1][0]/4, psi_ansz)
         return psi_ansz
 
     def Fidelity(x, target, p):
