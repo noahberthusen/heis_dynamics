@@ -74,8 +74,8 @@ if __name__ == "__main__":
         Heis.append(_)
     
     H = sum([Heis[i][(i+1)%L] for i in range(L)]) / 4
-    tf = 20
-    ts = 80
+    tf = 10
+    ts = 20
     dt = tf / ts
     Nt = int(tf / dt)
     c = [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
@@ -95,9 +95,11 @@ if __name__ == "__main__":
         for i in range(p): # len(params) // L
             for j in range(0, L, 2):
                 # odd first, then even. Apply to left
-                psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
             for j in range(1, L, 2):
-                psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
         return psi_ansz
 
     def Fidelity(x, target, p):
@@ -106,7 +108,7 @@ if __name__ == "__main__":
 
     if not os.path.exists(f'results_{L}'):
         os.makedirs(f'results_{L}')
-    f = open(f'./results_{L}/results_{L}_{p}.txt', 'a')
+    f = open(f'./results_{L}/results_time_{L}_{p}.txt', 'a')
 
     def OptimizeFidelity(t, p):
         # load in previous x if exists
@@ -117,7 +119,7 @@ if __name__ == "__main__":
         else:
             init_params = np.random.uniform(0, 2*np.pi, L*p)
 
-        sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(revos[t], p), parallel={'loginfo': True, 'time':True}, options={'maxiter':200})
+        sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(revos[t], p), parallel={'loginfo': True, 'time':True})
         if (sol.message == b'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'):
             # ran out of time
             f.write('Ran out of time when p={p} and time t={t}\n')

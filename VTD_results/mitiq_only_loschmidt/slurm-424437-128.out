@@ -1,0 +1,134 @@
+0 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=869573, Mon Jun 14 16:23:58 2021)
+circuitVTD.py:339: DeprecationWarning: The QuantumCircuit.__add__() method is being deprecated.Use the compose() method which is more flexible w.r.t circuit register compatibility.
+  TrotterFixStepList.append(TrotterFixStepList[-1] + U_trot)
+/home/nfb1/.local/lib/python3.7/site-packages/qiskit/circuit/quantumcircuit.py:869: DeprecationWarning: The QuantumCircuit.combine() method is being deprecated. Use the compose() method which is more flexible w.r.t circuit register compatibility.
+  return self.combine(rhs)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 -3.124999999999911e-02 1.0e+00 1.57e+00  2e+00  2e+00 0:06.0
+termination on ftarget=1e-11
+final/bestever f-value = -3.125000e-02 -3.125000e-02
+incumbent solution: [1.5094430393746263, 3.3942647756471565, 4.2800856768438535, 2.991709254826967]
+std deviation: [1.5507109295291661, 1.5072620591895356, 1.5799029309402113, 1.5790319907765304]
+CMAEvolutionStrategyResult(xbest=array([1.57101464, 2.95216767, 4.57370308, 2.36808227]), fbest=-0.031249999999999112, evals_best=1, evaluations=8, iterations=1, xfavorite=array([1.50944304, 3.39426478, 4.28008568, 2.99170925]), stds=array([1.55071093, 1.50726206, 1.57990293, 1.57903199]), stop={'ftarget': 1e-11})
+1 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=787326, Mon Jun 14 16:24:04 2021)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 1.093750000000000e-01 1.0e+00 1.68e+00  2e+00  2e+00 0:06.8
+    2     16 5.156250000000011e-01 1.4e+00 1.83e+00  2e+00  2e+00 0:13.7
+    3     24 4.218750000000000e-01 1.5e+00 1.90e+00  2e+00  2e+00 0:20.4
+    4     32 3.359375000000000e-01 1.6e+00 1.91e+00  2e+00  2e+00 0:27.1
+    5     40 3.750000000000001e-01 1.6e+00 2.12e+00  2e+00  3e+00 0:34.2
+    6     48 3.515624999999997e-01 1.6e+00 2.20e+00  2e+00  3e+00 0:40.8
+    7     56 5.234375000000002e-01 1.6e+00 2.73e+00  3e+00  3e+00 0:47.8
+    8     64 -2.656250000000000e-01 1.6e+00 2.70e+00  3e+00  3e+00 0:55.0
+termination on ftarget=1e-11
+final/bestever f-value = -2.656250e-01 -2.656250e-01
+incumbent solution: [-2.814782771033648, 0.3588721858507775, 5.528039693603585, 1.6112606572710382]
+std deviation: [2.9205256127045782, 2.7941579385253856, 2.9962280767280025, 2.520398936432406]
+CMAEvolutionStrategyResult(xbest=array([-1.2865625 , -0.90727618,  9.42508781,  2.34741676]), fbest=-0.265625, evals_best=57, evaluations=64, iterations=8, xfavorite=array([-2.81478277,  0.35887219,  5.52803969,  1.61126066]), stds=array([2.92052561, 2.79415794, 2.99622808, 2.52039894]), stop={'ftarget': 1e-11})
+2 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=813777, Mon Jun 14 16:24:59 2021)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 -1.015625000000000e-01 1.0e+00 1.36e+00  1e+00  1e+00 0:07.2
+termination on ftarget=1e-11
+final/bestever f-value = -1.015625e-01 -1.015625e-01
+incumbent solution: [1.5768839944987192, 5.591368740660898, 0.22242568013895325, 3.171326226389134]
+std deviation: [1.1601660748436287, 1.3162767574034149, 1.388075061321176, 1.3617695282232498]
+CMAEvolutionStrategyResult(xbest=array([1.39394693, 4.56264789, 1.57372168, 3.79146994]), fbest=-0.1015625, evals_best=4, evaluations=8, iterations=1, xfavorite=array([1.57688399, 5.59136874, 0.22242568, 3.17132623]), stds=array([1.16016607, 1.31627676, 1.38807506, 1.36176953]), stop={'ftarget': 1e-11})
+3 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=736483, Mon Jun 14 16:25:07 2021)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 1.953125000000004e-01 1.0e+00 1.64e+00  2e+00  2e+00 0:06.8
+    2     16 2.890625000000004e-01 1.4e+00 1.90e+00  2e+00  3e+00 0:13.8
+    3     24 -6.250000000000000e-02 2.0e+00 1.93e+00  2e+00  3e+00 0:20.7
+termination on ftarget=1e-11
+final/bestever f-value = -6.250000e-02 -6.250000e-02
+incumbent solution: [-0.15534581900788774, 3.2965467609792802, 3.9401568929368143, -3.223403773371329]
+std deviation: [1.9634512760481648, 1.95158906492908, 1.633279998716546, 2.6215013776241083]
+CMAEvolutionStrategyResult(xbest=array([-1.9347696 ,  4.11585506,  5.57483047, -3.73665486]), fbest=-0.0625, evals_best=21, evaluations=24, iterations=3, xfavorite=array([-0.15534582,  3.29654676,  3.94015689, -3.22340377]), stds=array([1.96345128, 1.95158906, 1.63328   , 2.62150138]), stop={'ftarget': 1e-11})
+4 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=854746, Mon Jun 14 16:25:27 2021)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 7.031250000000056e-02 1.0e+00 1.25e+00  1e+00  1e+00 0:07.1
+    2     16 2.109375000000009e-01 1.4e+00 1.06e+00  9e-01  1e+00 0:13.8
+    3     24 1.562500000000002e-01 1.4e+00 1.33e+00  1e+00  2e+00 0:20.6
+    4     32 3.124999999999999e-01 1.9e+00 1.54e+00  1e+00  2e+00 0:27.4
+    5     40 3.281249999999998e-01 2.5e+00 1.86e+00  1e+00  3e+00 0:34.8
+    6     48 1.015625000000000e-01 2.6e+00 1.70e+00  1e+00  3e+00 0:41.5
+    7     56 1.640624999999998e-01 2.7e+00 2.45e+00  2e+00  4e+00 0:48.9
+    9     72 2.343750000000006e-01 2.7e+00 2.73e+00  2e+00  4e+00 1:02.8
+   11     88 4.453125000000000e-01 2.7e+00 2.08e+00  1e+00  3e+00 1:17.0
+   13    104 5.468750000000022e-02 2.7e+00 1.50e+00  9e-01  2e+00 1:31.4
+   15    120 1.171875000000001e-01 2.5e+00 1.28e+00  8e-01  1e+00 1:46.0
+   17    136 1.718750000000004e-01 2.6e+00 1.22e+00  8e-01  1e+00 2:00.1
+   18    144 -3.125000000000007e-01 2.6e+00 1.15e+00  7e-01  1e+00 2:07.5
+termination on ftarget=1e-11
+final/bestever f-value = -3.125000e-01 -3.125000e-01
+incumbent solution: [3.428040059049266, 4.196247603742156, 7.330817555030201, 2.183337470860722]
+std deviation: [0.7955429117084172, 0.7673960015235579, 1.2501366084979721, 0.716802360888894]
+CMAEvolutionStrategyResult(xbest=array([3.44279374, 5.16225571, 6.64457221, 2.63134248]), fbest=-0.31250000000000067, evals_best=140, evaluations=144, iterations=18, xfavorite=array([3.42804006, 4.1962476 , 7.33081756, 2.18333747]), stds=array([0.79554291, 0.767396  , 1.25013661, 0.71680236]), stop={'ftarget': 1e-11})
+5 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=762807, Mon Jun 14 16:27:35 2021)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 5.859375000000004e-01 1.0e+00 1.27e+00  1e+00  1e+00 0:07.0
+    2     16 4.843750000000008e-01 1.2e+00 1.21e+00  1e+00  1e+00 0:14.2
+    3     24 -6.249999999999956e-02 1.4e+00 1.29e+00  1e+00  1e+00 0:21.4
+termination on ftarget=1e-11
+final/bestever f-value = -6.250000e-02 -6.250000e-02
+incumbent solution: [2.0539038822052835, -0.5221391126172008, 2.173862317916335, 4.775859794557021]
+std deviation: [1.1301448984933298, 1.0849452566115925, 1.280022309094732, 1.3213309199017542]
+CMAEvolutionStrategyResult(xbest=array([ 1.74616455, -0.47502147,  1.26924087,  5.1052475 ]), fbest=-0.062499999999999556, evals_best=19, evaluations=24, iterations=3, xfavorite=array([ 2.05390388, -0.52213911,  2.17386232,  4.77585979]), stds=array([1.1301449 , 1.08494526, 1.28002231, 1.32133092]), stop={'ftarget': 1e-11})
+6 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=786251, Mon Jun 14 16:27:56 2021)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 2.734375000000006e-01 1.0e+00 1.80e+00  2e+00  2e+00 0:07.3
+    2     16 3.359375000000004e-01 1.4e+00 1.76e+00  2e+00  2e+00 0:14.3
+    3     24 1.796875000000002e-01 1.5e+00 1.65e+00  1e+00  2e+00 0:21.6
+    4     32 1.250000000000000e-01 1.3e+00 1.60e+00  1e+00  2e+00 0:28.5
+    5     40 3.125000000000000e-01 1.3e+00 1.61e+00  1e+00  2e+00 0:35.7
+    6     48 2.890625000000000e-01 1.3e+00 1.85e+00  2e+00  2e+00 0:42.7
+    7     56 1.328124999999999e-01 1.6e+00 1.58e+00  1e+00  2e+00 0:50.1
+    9     72 2.031250000000002e-01 1.9e+00 1.16e+00  1e+00  1e+00 1:04.3
+   11     88 2.187500000000011e-01 2.2e+00 1.04e+00  9e-01  1e+00 1:18.4
+   13    104 1.484375000000008e-01 2.5e+00 9.41e-01  7e-01  9e-01 1:32.7
+   14    112 -7.031250000000000e-02 2.8e+00 1.15e+00  8e-01  1e+00 1:39.7
+termination on ftarget=1e-11
+final/bestever f-value = -7.031250e-02 -7.031250e-02
+incumbent solution: [2.564063446868496, 1.645525993820032, 3.47393784148365, 4.465509276631826]
+std deviation: [1.0758633645640785, 0.8223284877971332, 1.0481084680992898, 1.1055407885077608]
+CMAEvolutionStrategyResult(xbest=array([2.43395855, 2.18665184, 3.77172231, 3.7555779 ]), fbest=-0.0703125, evals_best=107, evaluations=112, iterations=14, xfavorite=array([2.56406345, 1.64552599, 3.47393784, 4.46550928]), stds=array([1.07586336, 0.82232849, 1.04810847, 1.10554079]), stop={'ftarget': 1e-11})
+7 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=770842, Mon Jun 14 16:29:36 2021)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 2.578125000000004e-01 1.0e+00 1.37e+00  1e+00  1e+00 0:07.1
+    2     16 -1.171875000000000e-01 1.3e+00 1.28e+00  1e+00  1e+00 0:14.2
+termination on ftarget=1e-11
+final/bestever f-value = -1.171875e-01 -1.171875e-01
+incumbent solution: [0.914308272415568, 0.2632091847200082, 1.1699867101418455, 3.8581359930305696]
+std deviation: [1.4412564294543253, 1.208343807529687, 1.2026095710362947, 1.057425041956316]
+CMAEvolutionStrategyResult(xbest=array([-0.44405069,  0.21138939,  0.85612506,  3.5181718 ]), fbest=-0.1171875, evals_best=13, evaluations=16, iterations=2, xfavorite=array([0.91430827, 0.26320918, 1.16998671, 3.85813599]), stds=array([1.44125643, 1.20834381, 1.20260957, 1.05742504]), stop={'ftarget': 1e-11})
+8 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=792235, Mon Jun 14 16:29:50 2021)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 2.421874999999996e-01 1.0e+00 1.69e+00  2e+00  2e+00 0:07.1
+    2     16 1.093749999999996e-01 1.4e+00 1.57e+00  1e+00  2e+00 0:14.1
+    3     24 -1.093750000000007e-01 1.6e+00 1.53e+00  1e+00  2e+00 0:21.5
+termination on ftarget=1e-11
+final/bestever f-value = -1.093750e-01 -1.093750e-01
+incumbent solution: [2.962689340824132, 4.873239318082222, 6.822364597561897, 1.7074015009752437]
+std deviation: [1.4682102832645856, 1.356805019389367, 1.422517497526171, 1.604486091193525]
+CMAEvolutionStrategyResult(xbest=array([2.44873444, 5.31274921, 7.49333367, 0.78006864]), fbest=-0.10937500000000067, evals_best=18, evaluations=24, iterations=3, xfavorite=array([2.96268934, 4.87323932, 6.8223646 , 1.7074015 ]), stds=array([1.46821028, 1.35680502, 1.4225175 , 1.60448609]), stop={'ftarget': 1e-11})
+9 10
+(4_w,8)-aCMA-ES (mu_w=2.6,w_1=52%) in dimension 4 (seed=778401, Mon Jun 14 16:30:12 2021)
+Iterat #Fevals   function value  axis ratio  sigma  min&max std  t[m:s]
+    1      8 3.203125000000003e-01 1.0e+00 1.45e+00  1e+00  2e+00 0:06.8
+    2     16 9.374999999999978e-02 1.3e+00 1.33e+00  1e+00  1e+00 0:13.9
+    3     24 1.796874999999996e-01 1.5e+00 1.31e+00  1e+00  1e+00 0:21.1
+    4     32 2.031249999999999e-01 1.6e+00 1.17e+00  9e-01  1e+00 0:27.8
+    5     40 -2.343750000000000e-01 1.6e+00 9.75e-01  7e-01  9e-01 0:35.3
+termination on ftarget=1e-11
+final/bestever f-value = -2.343750e-01 -2.343750e-01
+incumbent solution: [4.500751339403339, -1.090731512353785, 1.6252627380956628, 2.784590189544561]
+std deviation: [0.8285539719586432, 0.888803900695645, 0.7310722915203244, 0.799036489549053]
+CMAEvolutionStrategyResult(xbest=array([ 4.5019947 , -1.06674071,  1.68059871,  3.10944349]), fbest=-0.234375, evals_best=37, evaluations=40, iterations=5, xfavorite=array([ 4.50075134, -1.09073151,  1.62526274,  2.78459019]), stds=array([0.82855397, 0.8888039 , 0.73107229, 0.79903649]), stop={'ftarget': 1e-11})

@@ -1,17 +1,18 @@
 import numpy as np
 from qiskit import *
 from qiskit import Aer
-from scipy.optimize import minimize
 import pandas as pd
 from qiskit.test.mock import *
-from qiskit.providers.aer import AerSimulator
+from qiskit.providers.aer import AerSimulator, QasmSimulator
+from qiskit.providers.aer.noise import NoiseModel, noise_model
 from qiskit.ignis.mitigation.measurement import complete_meas_cal, CompleteMeasFitter
-from functools import partial
 import itertools
 import mitiq
 import argparse
-from cmaes import CMA
 import cma
+from optimparallel import minimize_parallel
+from scipy.optimize import minimize
+from qiskit import IBMQ
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -20,11 +21,13 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--p", type=int, default=1, help="Number of ansatz steps")
     parser.add_argument("-t", "--t", type=int, default=20, help="Final time")
     parser.add_argument("-d", "--d", type=float, default=0.25, help="Trotter step size")
+    parser.add_argument("-s", "--s", type=int, default=2**13, help="Number of shots")
     args = parser.parse_args()
     L = args.L
     p = args.p
     dt = args.d
     tf = args.t
+    shots = args.s
 
     def TrotterEvolveCircuit(dt, nt, init):
         """
@@ -140,7 +143,7 @@ if __name__ == "__main__":
         backend = Aer.get_backend('statevector_simulator')
         return execute(circ, backend).result().get_statevector()
 
-    def SwapTestCircuit(params, U_V, U_trot, init, p):
+    def SwapTestCircuit(params, U_v, U_trot, init, p):
         """
         Cost function using the swap test. 
         :param params: parameters new variational circuit that represents U_trot U_v | init >. Need dagger for cost function
@@ -178,9 +181,15 @@ if __name__ == "__main__":
 
         return circ
 
-    def SwapTestExecutor(circuit, backend, shots, filter):
+    def SwapTestExecutor(circuits, backend, shots, filter):
+        scale_factors = [1.0, 2.0, 3.0]
+        folded_circuits = []
+        for circuit in circuits:
+            folded_circuits.append([mitiq.zne.scaling.fold_gates_at_random(circuit, scale) for scale in scale_factors])
+        folded_circuits = list(itertools.chain(*folded_circuits))
+
         job = qiskit.execute(
-            experiments=circuit,
+            experiments=folded_circuits,
             backend=backend,
             optimization_level=0,
             shots=shots
@@ -189,20 +198,40 @@ if __name__ == "__main__":
         res = job.result()
         if (filter is not None):
             res = filter.apply(res)
-        counts = res.get_counts()
+        
+        c = ['1','1','0'] #[str((1 + (-1)**(i+1)) // 2) for i in range(L)]
+        c = ''.join(c)[::-1]
 
-        if counts.get('0') is None:
-            expectation_value = 0.
-        else:
-            expectation_value = counts.get('0') / shots
-        return expectation_value
+        all_counts = [job.result().get_counts(i) for i in range(len(folded_circuits))]
+        expectation_values = []
+        for counts in all_counts:
+            if counts.get('0') is None:
+                expectation_values.append(0)
+            else:
+                expectation_values.append(counts.get('0')/shots)
+        
+        zero_noise_values = []
+        if isinstance(backend, qiskit.providers.aer.backends.qasm_simulator.QasmSimulator): # exact_sim
+            for i in range(len(circuits)):
+                zero_noise_values.append(np.mean(expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
+        else: #device_sim
+            fac = mitiq.zne.inference.RichardsonFactory(scale_factors)
+            for i in range(len(circuits)):
+                zero_noise_values.append(fac.extrapolate(scale_factors, 
+                expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
+
+        return zero_noise_values
+
         
     def SwapTest(params, U_v, U_trot, init, p, backend, shots, filter):
         """
 
         """
-        circ = SwapTestCircuit(params, U_v, U_trot, init, p)
-        return 1 - mitiq.zne.execute_with_zne(circ, partial(SwapTestExecutor, backend=backend, shots=shots, filter=filter))
+        circs = []
+        for param in params:
+            circs.append(SwapTestCircuit(param, U_v, U_trot, init, p))
+        res = SwapTestExecutor(circs, backend, shots, filter)
+        return abs(1 - np.array(res))
 
     def LoschmidtEchoExecutor(circuits, backend, shots, filter):
         """
@@ -225,7 +254,7 @@ if __name__ == "__main__":
             shots=shots
         )
 
-        c = c = ['1', '1', '0'] #[str((1 + (-1)**(i+1)) // 2) for i in range(L)]
+        c = ['1','1','0'] #[str((1 + (-1)**(i+1)) // 2) for i in range(L)]
         c = ''.join(c)[::-1]
         res = job.result()
         if (filter is not None):
@@ -234,18 +263,19 @@ if __name__ == "__main__":
         all_counts = [job.result().get_counts(i) for i in range(len(folded_circuits))]
         expectation_values = []
         for counts in all_counts:
+            total_allowed_shots = [counts.get(''.join(p)) for p in set(itertools.permutations(c))]
+            total_allowed_shots = sum([0 if x is None else x for x in total_allowed_shots])
             if counts.get(c) is None:
                 expectation_values.append(0)
             else:
-                expectation_values.append(counts.get(c)/shots)
-        # expectation_values = [counts.get(c) / shots for counts in all_counts]
+                expectation_values.append(counts.get(c)/total_allowed_shots)
         
         zero_noise_values = []
         if isinstance(backend, qiskit.providers.aer.backends.qasm_simulator.QasmSimulator): # exact_sim
             for i in range(len(circuits)):
                 zero_noise_values.append(np.mean(expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
         else: #device_sim
-            fac = mitiq.zne.inference.RichardsonFactory(scale_factors)
+            fac = mitiq.zne.inference.LinearFactory(scale_factors)
             for i in range(len(circuits)):
                 zero_noise_values.append(fac.extrapolate(scale_factors, 
                 expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
@@ -274,7 +304,7 @@ if __name__ == "__main__":
         for param in params:
             circs.append(LoschmidtEchoCircuit(param, U_v, U_trot, init, p))
         res = LoschmidtEchoExecutor(circs, backend, shots, filter)
-        return 1 - np.array(res)
+        return abs(1 - np.array(res))
 
     def LoschmidtEchoExact(params, U_v, U_trot, init, p):
         U_v_prime = AnsatzCircuit(params, p)
@@ -282,30 +312,13 @@ if __name__ == "__main__":
 
         circ_vec = Simulate(circ)
         init_vec = Simulate(init)
-        return 1 - abs(np.conj(circ_vec) @ init_vec)**2
+        fidelity = 1 - abs(np.conj(circ_vec) @ init_vec)**2
+        return fidelity
 
     def CMAES(U_v, U_trot, init, p, backend, shots, filter):
-        """
-        num_generations = 60
-        optimizer = CMA(mean=np.zeros(p*(L-1)), sigma=np.pi/2)
-        pop_size = optimizer.population_size
-
-        for generation in range(num_generations):
-            print('.', end='')
-            solutions = []
-            params = []
-            for _ in range(pop_size):
-                x = optimizer.ask()
-                params.append(x)
-            values = LoschmidtEcho(params, U_v, U_trot, init, p, backend, shots, filter)
-            for i in range(optimizer.population_size):
-                solutions.append((params[i], values[i]))
-            optimizer.tell(solutions)
-        return solutions[0]
-        """
         init_params = np.random.uniform(0, 2*np.pi, (L-1)*p)
         es = cma.CMAEvolutionStrategy(init_params, np.pi/2)
-        es.opts.set({'ftarget':5e-4, 'maxiter':100})
+        es.opts.set({'ftarget':5e-3, 'maxiter':300})
         while not es.stop():
             solutions = es.ask()
             es.tell(solutions, LoschmidtEcho(solutions, U_v, U_trot, init, p, backend, shots, filter))
@@ -318,7 +331,7 @@ if __name__ == "__main__":
         """
         nt = int(np.ceil(tf / (dt * p)))
 
-        VTCParamList = []
+        VTCParamList = [np.zeros((L-1)*p)]
         VTCStepList = [SimulateAndReorder(init.copy())]
         TrotterFixStepList = [init]
         TimeStep = [0]
@@ -332,47 +345,49 @@ if __name__ == "__main__":
             U_trot = TrotterEvolveCircuit(dt, p, QuantumCircuit(L))
             
             TrotterFixStepList.append(TrotterFixStepList[-1] + U_trot)
-            
-            init_params = np.random.uniform(0, np.pi, (L-1)*p)
+            # init_params = np.random.uniform(0, 2*np.pi, (L-1)*p)
             # res = minimize(fun=SwapTest, x0=init_params, args=(U_v, U_trot, init, p, 8192), method='COBYLA')
-            # res = minimize(fun=LoschmidtEcho, x0=init_params, args=(U_v, U_trot, init, p, exact_sim, 8192, None), method='COBYLA')
-            # res = minimize(fun=LoschmidtEchoExact, x0=init_params, args=(U_v, U_trot, init, p))
-            
-            
+            # res = minimize_parallel(fun=LoschmidtEcho, x0=init_params, args=(U_v, U_trot, init, p, backend, shots, filter))
+            # res = minimize_parallel(fun=LoschmidtEchoExact, x0=init_params, args=(U_v, U_trot, init, p))
             res = CMAES(U_v, U_trot, init, p, backend, shots, filter)
 
             print(res)
-            
-            VTCParamList.append(res.xbest) #res.x
-            VTCStepList.append(SimulateAndReorder(init + AnsatzCircuit(res.xbest, p))) #res.x
+            res = res.xbest
+
+            VTCParamList.append(res) #res.x
+            VTCStepList.append(SimulateAndReorder(init + AnsatzCircuit(res, p))) #res.x
             TimeStep.append(TimeStep[-1]+(dt*p))
         
         TrotterFixStepList = pd.DataFrame(np.array([SimulateAndReorder(c.copy()) for c in TrotterFixStepList]), index=np.array(TimeStep))
-        VTCParamList = pd.DataFrame(np.array(VTCParamList), index=np.array(TimeStep[1:]))
+        # VTCParamList = pd.DataFrame(np.array(VTCParamList), index=np.array(TimeStep))
         VTCStepList = pd.DataFrame(np.array(VTCStepList), index=np.array(TimeStep))
 
+        # VTCParamList.to_csv(f'./results_{L}/VTD_params_{tf}_{L}_{p}_{dt}_{shots}.csv')
         VTCStepList.to_csv(f'./results_{L}/VTD_results_{tf}_{L}_{p}_{dt}_{shots}.csv')
 
+    # provider = IBMQ.load_account()
 
     qr = QuantumRegister(L)
     meas_calibs, state_labels = complete_meas_cal(qr=qr, circlabel='mcal')
 
-    device_backend = FakeYorktown()
+    device_backend = FakeSantiago()
     device_sim = AerSimulator.from_backend(device_backend)
-    exact_sim = Aer.get_backend('qasm_simulator')
-    sim = device_sim
+    # noise_model = NoiseModel.from_backend(device_backend)
+    # real_device = provider.get_backend('ibmq_santiago')
+    # device_sim = QasmSimulator(method='statevector', noise_model=noise_model)
+    exact_sim = Aer.get_backend('qasm_simulator') # QasmSimulator(method='statevector')
 
-    # Execute the calibration circuits without noise
-    t_qc = transpile(meas_calibs, sim)
+    t_qc = transpile(meas_calibs, device_sim)
     qobj = assemble(t_qc, shots=10000)
-    cal_results = sim.run(qobj, shots=10000).result()
+    cal_results = device_sim.run(qobj, shots=10000).result()
     meas_fitter = CompleteMeasFitter(cal_results, state_labels, circlabel='mcal')
-    np.around(meas_fitter.cal_matrix, decimals=2)
+    # np.around(meas_fitter.cal_matrix, decimals=2)
 
     init = QuantumCircuit(L)
-    c = ['1', '1', '0'] # [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
+    c = ['1','1','0'] #[str((1 + (-1)**(i+1)) // 2) for i in range(L)]
     for q in range(len(c)):
         if (c[q] == '1'):
             init.x(q)
+    print(shots)
 
-    VTC(tf, dt, p, init, exact_sim, 2**13, None)
+    VTC(tf, dt, p, init, device_sim, shots, meas_fitter.filter)
