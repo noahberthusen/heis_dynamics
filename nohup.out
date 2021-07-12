@@ -1,0 +1,104 @@
+deviceCircuitVTC.py:382: DeprecationWarning: Passing a Qobj to Backend.run is deprecated and will be removed in a future release. Please pass in circuits or pulse schedules instead.
+  cal_results = real_device.run(qobj, shots=8192).result()
+deviceCircuitVTC.py:296: DeprecationWarning: The QuantumCircuit.__add__() method is being deprecated.Use the compose() method which is more flexible w.r.t circuit register compatibility.
+  circ = init + U_v + U_trot + U_v_prime.inverse()
+C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\circuit\quantumcircuit.py:869: DeprecationWarning: The QuantumCircuit.combine() method is being deprecated. Use the compose() method which is more flexible w.r.t circuit register compatibility.
+  return self.combine(rhs)
+Traceback (most recent call last):
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connection.py", line 170, in _new_conn
+    (self._dns_host, self.port), self.timeout, **extra_kw
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+  File "C:\Users\nfber\anaconda3\envs\qc\lib\socket.py", line 752, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+socket.gaierror: [Errno 11001] getaddrinfo failed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connectionpool.py", line 706, in urlopen
+    chunked=chunked,
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connectionpool.py", line 382, in _make_request
+    self._validate_conn(conn)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connectionpool.py", line 1010, in _validate_conn
+    conn.connect()
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connection.py", line 353, in connect
+    conn = self._new_conn()
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connection.py", line 182, in _new_conn
+    self, "Failed to establish a new connection: %s" % e
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPSConnection object at 0x00000235E4E57708>: Failed to establish a new connection: [Errno 11001] getaddrinfo failed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\requests\adapters.py", line 449, in send
+    timeout=timeout
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connectionpool.py", line 796, in urlopen
+    **response_kw
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connectionpool.py", line 796, in urlopen
+    **response_kw
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connectionpool.py", line 796, in urlopen
+    **response_kw
+  [Previous line repeated 1 more time]
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\connectionpool.py", line 756, in urlopen
+    method, url, error=e, _pool=self, _stacktrace=sys.exc_info()[2]
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\providers\ibmq\api\session.py", line 98, in increment
+    error=error, _pool=_pool, _stacktrace=_stacktrace)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\urllib3\util\retry.py", line 574, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='s3.us-east.cloud-object-storage.appdomain.cloud', port=443): Max retries exceeded with url: /us-east-quantum-computing-user-jobs-prod/result-60ebdb98d360050c3249314b.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=21ce861c64cc417e9a95f95263ecf8f7%2F20210712%2Fus-east%2Fs3%2Faws4_request&X-Amz-Date=20210712T090752Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=9618c82f18d1fa0ca788c57ba1bb3460578804a1b82a687062ce8efd55d6e34e (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x00000235E4E57708>: Failed to establish a new connection: [Errno 11001] getaddrinfo failed'))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\providers\ibmq\api\session.py", line 277, in request
+    response = super().request(method, final_url, headers=headers, **kwargs)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\requests\sessions.py", line 542, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\requests\sessions.py", line 655, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\requests\adapters.py", line 516, in send
+    raise ConnectionError(e, request=request)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='s3.us-east.cloud-object-storage.appdomain.cloud', port=443): Max retries exceeded with url: /us-east-quantum-computing-user-jobs-prod/result-60ebdb98d360050c3249314b.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=21ce861c64cc417e9a95f95263ecf8f7%2F20210712%2Fus-east%2Fs3%2Faws4_request&X-Amz-Date=20210712T090752Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=9618c82f18d1fa0ca788c57ba1bb3460578804a1b82a687062ce8efd55d6e34e (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x00000235E4E57708>: Failed to establish a new connection: [Errno 11001] getaddrinfo failed'))
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\providers\ibmq\job\ibmqjob.py", line 951, in _retrieve_result
+    self.job_id(), self._use_object_storage)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\providers\ibmq\api\clients\account.py", line 280, in job_result
+    return self._job_result_object_storage(job_id)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\providers\ibmq\api\clients\account.py", line 303, in _job_result_object_storage
+    result_response = job_api.get_object_storage(download_url)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\providers\ibmq\api\rest\job.py", line 204, in get_object_storage
+    response = self.session.get(url, bare=True, timeout=600).json()
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\requests\sessions.py", line 555, in get
+    return self.request('GET', url, **kwargs)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\providers\ibmq\api\session.py", line 300, in request
+    raise RequestsApiError(message, status_code) from ex
+qiskit.providers.ibmq.api.exceptions.RequestsApiError: "HTTPSConnectionPool(host='s3.us-east.cloud-object-storage.appdomain.cloud', port=443): Max retries exceeded with url: /us-east-quantum-computing-user-jobs-prod/result-60ebdb98d360050c3249314b.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=21ce861c64cc417e9a95f95263ecf8f7%2F20210712%2Fus-east%2Fs3%2Faws4_request&X-Amz-Date=20210712T090752Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=9618c82f18d1fa0ca788c57ba1bb3460578804a1b82a687062ce8efd55d6e34e (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x00000235E4E57708>: Failed to establish a new connection: [Errno 11001] getaddrinfo failed'))"
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "deviceCircuitVTC.py", line 396, in <module>
+    VTC(tf, dt, p, init, real_device, shots, meas_fitter.filter)
+  File "deviceCircuitVTC.py", line 350, in VTC
+    res = CMAES(U_v, U_trot, init, p, backend, shots, filter)
+  File "deviceCircuitVTC.py", line 325, in CMAES
+    es.tell(solutions, LoschmidtEcho(solutions, U_v, U_trot, init, p, backend, shots, filter))
+  File "deviceCircuitVTC.py", line 307, in LoschmidtEcho
+    res = LoschmidtEchoExecutor(circs, backend, shots, filter)
+  File "deviceCircuitVTC.py", line 259, in LoschmidtEchoExecutor
+    res = job.result()
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\providers\ibmq\job\ibmqjob.py", line 294, in result
+    self._retrieve_result(refresh=refresh)
+  File "C:\Users\nfber\AppData\Roaming\Python\Python37\site-packages\qiskit\providers\ibmq\job\ibmqjob.py", line 960, in _retrieve_result
+    'job {}: {}'.format(self.job_id(), str(err))) from err
+qiskit.providers.ibmq.job.exceptions.IBMQJobApiError: 'Unable to retrieve result for job 60ebdb98d360050c3249314b: "HTTPSConnectionPool(host=\'s3.us-east.cloud-object-storage.appdomain.cloud\', port=443): Max retries exceeded with url: /us-east-quantum-computing-user-jobs-prod/result-60ebdb98d360050c3249314b.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=21ce861c64cc417e9a95f95263ecf8f7%2F20210712%2Fus-east%2Fs3%2Faws4_request&X-Amz-Date=20210712T090752Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=9618c82f18d1fa0ca788c57ba1bb3460578804a1b82a687062ce8efd55d6e34e (Caused by NewConnectionError(\'<urllib3.connection.HTTPSConnection object at 0x00000235E4E57708>: Failed to establish a new connection: [Errno 11001] getaddrinfo failed\'))"'
+Job Status: job is being validatedJob Status: job is queued (351)   Job Status: job has successfully run
+Job Status: job is being validatedJob Status: job is queued (351)   Job Status: job is actively runningJob Status: job has successfully run
+Job Status: job is being validatedJob Status: job is queued (351)   Job Status: job is actively runningJob Status: job has successfully run
+Job Status: job is being validatedJob Status: job is queued (351)   Job Status: job is actively runningJob Status: job has successfully run
+Job Status: job is being validatedJob Status: job is queued (351)   Job Status: job is actively runningJob Status: job has successfully run
+Job Status: job is being validatedJob Status: job is queued (351)   Job Status: job is actively runningJob Status: job has successfully run

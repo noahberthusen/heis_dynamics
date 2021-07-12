@@ -45,7 +45,7 @@ if __name__ == "__main__":
     for i in range(L):
         sprs = csc_matrix((2**L, 2**L), dtype=np.int8)
         for j in range(2**L):
-            sprs[j, j] = 2*int(format(j, '0{}b'.format(L))[i])-1
+            sprs[j, j] = 1-2*int(format(j, '0{}b'.format(L))[i])
         Sz.append(sprs)
     SzTot = sum(Sz)
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
             sprs = csc_matrix((2**L, 2**L), dtype=np.int8)
             for j in range(2**L):
                 h = FlipFlop(j, i, k)
-                v = lambda i: 2*int(format(j, '0{}b'.format(L))[i])-1 
+                v = lambda i: 1-2*int(format(j, '0{}b'.format(L))[i])
                 if (h != -1):
                     sprs[j, h] = 2
                     sprs[h, j] = 2
@@ -74,12 +74,12 @@ if __name__ == "__main__":
         Heis.append(_)
     
     H = sum([Heis[i][(i+1)%L] for i in range(L)]) / 4
-    tf = 10
-    ts = 20
+    tf = 7
+    ts = 70
     dt = tf / ts
     Nt = int(tf / dt)
     c = [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
-    UnitVector = lambda c: np.eye(2**L)[c-1]
+    UnitVector = lambda c: np.eye(2**L)[c]
     init = UnitVector(int(''.join(c), 2))
 
     revos = [np.zeros(2**L) for i in range(Nt+1)]
@@ -106,36 +106,26 @@ if __name__ == "__main__":
         psi_ansz = Ansatz(x, p)
         return 1 - abs(np.conj(target) @ psi_ansz)**2
 
-    if not os.path.exists(f'results_{L}'):
-        os.makedirs(f'results_{L}')
-    f = open(f'./results_{L}/results_time_{L}_{p}.txt', 'a')
+    f = open(f'./results_{L}/results_time_{L}_{p}.txt', 'w')
 
     def OptimizeFidelity(t, p):
-        # load in previous x if exists
-        if os.path.exists(f'./results_{L}/temp_x_{L}_{t}_{p}.npy'):
-            f.write('Loading in previous x array\n')
-            with open(f'./results_{L}/temp_x_{L}_{t}_{p}.npy', 'rb') as arrf:
-                init_params = np.load(arrf)
-        else:
-            init_params = np.random.uniform(0, 2*np.pi, L*p)
+        
+        init_params = np.random.uniform(0, 2*np.pi, L*p)
 
         sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(revos[t], p), parallel={'loginfo': True, 'time':True})
-        if (sol.message == b'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'):
-            # ran out of time
-            f.write('Ran out of time when p={p} and time t={t}\n')
-            with open(f'./results_{L}/temp_x_{L}_{t}_{p}.npy', 'wb') as arrf:
-                np.save(arrf, sol.x)
-                os.system(f'sbatch job-heis-did2.sh {L} {t} {p}')
-            f.close()
-            quit()
-        else:
-            f.write(f'{sol.fun}, {t*tf/ts}\n')
-            return sol.fun
+        
+        # f.write(f'{sol.fun}, {t*tf/ts}\n')
+        return sol.fun, t*tf/ts
+   
 
     i = t
     while (i < len(revos)):
         # print(i, p)
-        fun = OptimizeFidelity(i, p)
+        funs = []
+        for j in range(2):
+            fun, ti = OptimizeFidelity(i, p)
+            funs.append(fun)
+        f.write(f'{np.mean(funs)}, {ti}\n')
         # f.write(f'\n Converged: Fidelity = {fun} at time t={i} for p={p} \n')
         i += 1
 

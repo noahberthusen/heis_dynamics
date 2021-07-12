@@ -1,19 +1,19 @@
 import numpy as np
 from qiskit import *
 from qiskit import Aer
-from scipy.optimize import minimize
 import pandas as pd
 from qiskit.test.mock import *
 from qiskit.providers.aer import AerSimulator
 from qiskit.ignis.mitigation.measurement import complete_meas_cal, CompleteMeasFitter
-from functools import partial
 import itertools
 import mitiq
 import argparse
 import cma
 import os
+import sys
 from qiskit import IBMQ
 from qiskit.tools.monitor import job_monitor
+import pickle
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -183,7 +183,7 @@ if __name__ == "__main__":
         return circ
 
     def SwapTestExecutor(circuits, backend, shots, filter):
-        scale_factors = [1.0, 2.0, 3.0]
+        scale_factors = [1.0, 1.5, 2.0]
         folded_circuits = []
         for circuit in circuits:
             folded_circuits.append([mitiq.zne.scaling.fold_gates_at_random(circuit, scale) for scale in scale_factors])
@@ -213,7 +213,7 @@ if __name__ == "__main__":
             for i in range(len(circuits)):
                 zero_noise_values.append(np.mean(expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
         else: #device_sim
-            fac = mitiq.zne.inference.RichardsonFactory(scale_factors)
+            fac = mitiq.zne.inference.LinearFactory(scale_factors)
             for i in range(len(circuits)):
                 zero_noise_values.append(fac.extrapolate(scale_factors, 
                 expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
@@ -239,7 +239,7 @@ if __name__ == "__main__":
         :param shots: Number of times to execute the circuit to compute the expectation value.
         :param fitter: measurement error mitigator
         """
-        scale_factors = [1.0, 2.0, 3.0]
+        scale_factors = [1.0, 1.5, 2.0]
         folded_circuits = []
         for circuit in circuits:
             folded_circuits.append([mitiq.zne.scaling.fold_gates_at_random(circuit, scale) for scale in scale_factors])
@@ -251,8 +251,10 @@ if __name__ == "__main__":
             optimization_level=0,
             shots=shots
         )
+        job_monitor(job)
 
-        c = [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
+        c = ['1','1','0']
+        # c = [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
         c = ''.join(c)[::-1]
         res = job.result()
         if (filter is not None):
@@ -274,7 +276,7 @@ if __name__ == "__main__":
             for i in range(len(circuits)):
                 zero_noise_values.append(np.mean(expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
         else: #device_sim
-            fac = mitiq.zne.inference.RichardsonFactory(scale_factors)
+            fac = mitiq.zne.inference.LinearFactory(scale_factors)
             for i in range(len(circuits)):
                 zero_noise_values.append(fac.extrapolate(scale_factors, 
                 expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
@@ -316,18 +318,16 @@ if __name__ == "__main__":
     def CMAES(U_v, U_trot, init, p, backend, shots, filter):
         init_params = np.random.uniform(0, 2*np.pi, (L-1)*p)
         es = cma.CMAEvolutionStrategy(init_params, np.pi/2)
-        es.opts.set({'ftarget':1e-11, 'maxiter':1000})
+        es.opts.set({'ftarget':5e-3, 'maxiter':1000})
+        # es = pickle.load(open(f'./results_{L}/optimizer_dump', 'rb'))
         while not es.stop():
-            solutions = es.ask()
+            solutions = es.ask(25)
             es.tell(solutions, LoschmidtEcho(solutions, U_v, U_trot, init, p, backend, shots, filter))
             es.disp()
+            open(f'./results_{L}/optimizer_dump', 'wb').write(es.pickle_dumps())
         return es.result_pretty()
 
     def VTC(tf, dt, p, init, backend, shots, filter):
-        """
-        :param init: initial state as a circuit
-        """
-        nt = int(np.ceil(tf / (dt * p)))
 
         VTCParamList = [np.zeros((L-1)*p)]
         VTCStepList = [SimulateAndReorder(init.copy())]
@@ -364,28 +364,34 @@ if __name__ == "__main__":
         if (ts[-1] >= tf):
             return
         else:
-            os.system(f'sbatch job-heis-did2.sh {L} {p} {tf} {dt} {shots}')
+            os.system(f'python deviceCircuitVTC.py -L {L} -p {p} -t {tf} -d {dt} -s {shots}')
 
+    provider = IBMQ.load_account()
     qr = QuantumRegister(L)
     meas_calibs, state_labels = complete_meas_cal(qr=qr, circlabel='mcal')
 
     device_backend = FakeSantiago()
     device_sim = AerSimulator.from_backend(device_backend)
     # noise_model = NoiseModel.from_backend(device_backend)
-    # real_device = provider.get_backend('ibmq_santiago')
+    real_device = provider.get_backend('ibmq_manila')
     # device_sim = QasmSimulator(method='statevector', noise_model=noise_model)
     exact_sim = Aer.get_backend('qasm_simulator') # QasmSimulator(method='statevector')
 
     t_qc = transpile(meas_calibs, device_sim)
-    qobj = assemble(t_qc, shots=10000)
-    cal_results = device_sim.run(qobj, shots=10000).result()
+    qobj = assemble(t_qc, shots=8192)
+    cal_results = real_device.run(qobj, shots=8192).result()
     meas_fitter = CompleteMeasFitter(cal_results, state_labels, circlabel='mcal')
     # np.around(meas_fitter.cal_matrix, decimals=2)
 
     init = QuantumCircuit(L)
-    c = [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
+    # c = [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
+    c = ['1','1','0']
     for q in range(len(c)):
         if (c[q] == '1'):
             init.x(q)
 
-    VTC(tf, dt, p, init, exact_sim, shots, None)
+    nt = int(np.ceil(tf / (dt * p)))
+    f = open(f'./results_{L}/logging.txt', 'a')
+    sys.stdout = f
+    VTC(tf, dt, p, init, real_device, shots, meas_fitter.filter)
+    f.close()
