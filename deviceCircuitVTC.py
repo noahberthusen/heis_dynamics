@@ -2,8 +2,9 @@ import numpy as np
 from qiskit import *
 from qiskit import Aer
 import pandas as pd
+from qiskit.providers.aer.noise.noise_model import NoiseModel
 from qiskit.test.mock import *
-from qiskit.providers.aer import AerSimulator
+from qiskit.providers.aer import AerSimulator, QasmSimulator
 from qiskit.ignis.mitigation.measurement import complete_meas_cal, CompleteMeasFitter
 import itertools
 import mitiq
@@ -14,6 +15,7 @@ import sys
 from qiskit import IBMQ
 from qiskit.tools.monitor import job_monitor
 import pickle
+import random
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -30,6 +32,30 @@ if __name__ == "__main__":
     tf = args.t
     shots = args.s
 
+    def TwirledCNOT(circ, qb0, qb1):
+        def apply_pauli(circ, num, qb):
+            if (num == 0):
+                circ.i(qb)
+            elif (num == 1):
+                circ.x(qb)
+            elif (num == 2):
+                circ.y(qb)
+            else:
+                circ.z(qb)
+            return circ
+            
+        paulis = [(i,j) for i in range(0,4) for j in range(0,4)]
+        paulis.remove((0,0))
+        paulis_map = [(0, 1), (3, 2), (3, 3), (1, 1), (1, 0), (2, 3), (2, 2), (2, 1), (2, 0), (1, 3), (1, 2), (3, 0), (3, 1), (0, 2), (0, 3)]
+        num = random.randrange(len(paulis))
+
+        apply_pauli(circ, paulis[num][0], qb0)
+        apply_pauli(circ, paulis[num][1], qb1)
+        circ.cnot(qb0, qb1)
+        apply_pauli(circ, paulis_map[num][0], qb0)
+        apply_pauli(circ, paulis_map[num][1], qb1)
+        return circ
+
     def TrotterEvolveCircuit(dt, nt, init):
         """
         Implements trotter evolution of the Heisenberg hamiltonian using the circuit from https://arxiv.org/pdf/1906.06343.pdf
@@ -43,16 +69,19 @@ if __name__ == "__main__":
         def get_angles(a):
             return (np.pi/2 - 2*a, 2*a - np.pi/2, np.pi/2 - 2*a)
 
-        def N(circ, qb0, qb1):
-            circ.rz(-np.pi/2, qb1)
-            circ.cnot(qb1, qb0)
-            circ.rz(theta, qb0)
-            circ.ry(phi, qb1)
-            circ.cnot(qb0, qb1)
-            circ.ry(lambd, qb1)
-            circ.cnot(qb1, qb0)
-            circ.rz(np.pi/2, qb0)
-            return circ
+        def N(cir, qb0, qb1):
+            cir.rz(-np.pi/2, qb1)
+            TwirledCNOT(cir, qb1, qb0)
+            # cir.cnot(qb1, qb0)
+            cir.rz(theta, qb0)
+            cir.ry(phi, qb1)
+            TwirledCNOT(cir, qb0, qb1)
+            # cir.cnot(qb0, qb1)
+            cir.ry(lambd, qb1)
+            TwirledCNOT(cir, qb1, qb0)
+            # cir.cnot(qb1, qb0)
+            cir.rz(np.pi/2, qb0)
+            return cir
 
         theta, phi, lambd = get_angles(-dt/4)
         circ = init
@@ -91,12 +120,15 @@ if __name__ == "__main__":
 
         def N(cir, angles, qb0, qb1):
             cir.rz(-np.pi/2, qb1)
-            cir.cnot(qb1, qb0)
+            TwirledCNOT(cir, qb1, qb0)
+            # cir.cnot(qb1, qb0)
             cir.rz(angles[0], qb0)
             cir.ry(angles[1], qb1)
-            cir.cnot(qb0, qb1)
+            TwirledCNOT(cir, qb0, qb1)
+            # cir.cnot(qb0, qb1)
             cir.ry(angles[2], qb1)
-            cir.cnot(qb1, qb0)
+            TwirledCNOT(cir, qb1, qb0)
+            # cir.cnot(qb1, qb0)
             cir.rz(np.pi/2, qb0)
             return cir
 
@@ -144,92 +176,92 @@ if __name__ == "__main__":
         backend = Aer.get_backend('statevector_simulator')
         return execute(circ, backend).result().get_statevector()
 
-    def SwapTestCircuit(params, U_v, U_trot, init, p):
-        """
-        Cost function using the swap test. 
-        :param params: parameters new variational circuit that represents U_trot U_v | init >. Need dagger for cost function
-        :param U_v: variational circuit that stores the state before the trotter step
-        :param U_trot: trotter step
-        :param init: initial state
-        :param p: number of ansatz steps
-        :param shots: number of measurements to take
-        """
-        U_v_prime = init + AnsatzCircuit(params, p)
-        U_v_prime = U_v_prime.qasm()
-        U_v_prime = U_v_prime.replace(f'q[{L}]', f'q[{2*L+1}]')
+    # def SwapTestCircuit(params, U_v, U_trot, init, p):
+    #     """
+    #     Cost function using the swap test. 
+    #     :param params: parameters new variational circuit that represents U_trot U_v | init >. Need dagger for cost function
+    #     :param U_v: variational circuit that stores the state before the trotter step
+    #     :param U_trot: trotter step
+    #     :param init: initial state
+    #     :param p: number of ansatz steps
+    #     :param shots: number of measurements to take
+    #     """
+    #     U_v_prime = init + AnsatzCircuit(params, p)
+    #     U_v_prime = U_v_prime.qasm()
+    #     U_v_prime = U_v_prime.replace(f'q[{L}]', f'q[{2*L+1}]')
 
-        for i in range(L, -1, -1):
-            U_v_prime = U_v_prime.replace(f'q[{i}]', f'q[{i+1}]')
-        U_v_prime = circuit.QuantumCircuit.from_qasm_str(U_v_prime)
+    #     for i in range(L, -1, -1):
+    #         U_v_prime = U_v_prime.replace(f'q[{i}]', f'q[{i+1}]')
+    #     U_v_prime = circuit.QuantumCircuit.from_qasm_str(U_v_prime)
 
-        comp = init + U_v + U_trot
-        comp = comp.qasm()
-        comp = comp.replace(f'q[{L}]', f'q[{2*L+1}]')
-        for i in range(L, -1, -1):
-            comp = comp.replace(f'q[{i}]', f'q[{L+i+1}]')
-        comp = circuit.QuantumCircuit.from_qasm_str(comp)
+    #     comp = init + U_v + U_trot
+    #     comp = comp.qasm()
+    #     comp = comp.replace(f'q[{L}]', f'q[{2*L+1}]')
+    #     for i in range(L, -1, -1):
+    #         comp = comp.replace(f'q[{i}]', f'q[{L+i+1}]')
+    #     comp = circuit.QuantumCircuit.from_qasm_str(comp)
 
-        circ = QuantumCircuit(2*L+1, 1)
-        circ.h(0)
-        circ += U_v_prime 
-        circ += comp
+    #     circ = QuantumCircuit(2*L+1, 1)
+    #     circ.h(0)
+    #     circ += U_v_prime 
+    #     circ += comp
 
-        # controlled swaps
-        for i in range(L):
-            circ.cswap(0, i+1, L+i+1)
-        circ.h(0)
-        circ.measure(0,0)
+    #     # controlled swaps
+    #     for i in range(L):
+    #         circ.cswap(0, i+1, L+i+1)
+    #     circ.h(0)
+    #     circ.measure(0,0)
 
-        return circ
+    #     return circ
 
-    def SwapTestExecutor(circuits, backend, shots, filter):
-        scale_factors = [1.0, 1.5, 2.0]
-        folded_circuits = []
-        for circuit in circuits:
-            folded_circuits.append([mitiq.zne.scaling.fold_gates_at_random(circuit, scale) for scale in scale_factors])
-        folded_circuits = list(itertools.chain(*folded_circuits))
+    # def SwapTestExecutor(circuits, backend, shots, filter):
+    #     scale_factors = [1.0, 1.5, 2.0]
+    #     folded_circuits = []
+    #     for circuit in circuits:
+    #         folded_circuits.append([mitiq.zne.scaling.fold_gates_at_random(circuit, scale) for scale in scale_factors])
+    #     folded_circuits = list(itertools.chain(*folded_circuits))
 
-        job = qiskit.execute(
-            experiments=folded_circuits,
-            backend=backend,
-            optimization_level=0,
-            shots=shots
-        )
+    #     job = qiskit.execute(
+    #         experiments=folded_circuits,
+    #         backend=backend,
+    #         optimization_level=0,
+    #         shots=shots
+    #     )
 
-        res = job.result()
-        if (filter is not None):
-            res = filter.apply(res)
+    #     res = job.result()
+    #     if (filter is not None):
+    #         res = filter.apply(res)
 
-        all_counts = [job.result().get_counts(i) for i in range(len(folded_circuits))]
-        expectation_values = []
-        for counts in all_counts:
-            if counts.get('0') is None:
-                expectation_values.append(0)
-            else:
-                expectation_values.append(counts.get('0')/shots)
+    #     all_counts = [job.result().get_counts(i) for i in range(len(folded_circuits))]
+    #     expectation_values = []
+    #     for counts in all_counts:
+    #         if counts.get('0') is None:
+    #             expectation_values.append(0)
+    #         else:
+    #             expectation_values.append(counts.get('0')/shots)
         
-        zero_noise_values = []
-        if isinstance(backend, qiskit.providers.aer.backends.qasm_simulator.QasmSimulator): # exact_sim
-            for i in range(len(circuits)):
-                zero_noise_values.append(np.mean(expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
-        else: #device_sim
-            fac = mitiq.zne.inference.LinearFactory(scale_factors)
-            for i in range(len(circuits)):
-                zero_noise_values.append(fac.extrapolate(scale_factors, 
-                expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
+    #     zero_noise_values = []
+    #     if isinstance(backend, qiskit.providers.aer.backends.qasm_simulator.QasmSimulator): # exact_sim
+    #         for i in range(len(circuits)):
+    #             zero_noise_values.append(np.mean(expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
+    #     else: #device_sim
+    #         fac = mitiq.zne.inference.LinearFactory(scale_factors)
+    #         for i in range(len(circuits)):
+    #             zero_noise_values.append(fac.extrapolate(scale_factors, 
+    #             expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
 
-        return zero_noise_values
+    #     return zero_noise_values
 
         
-    def SwapTest(params, U_v, U_trot, init, p, backend, shots, filter):
-        """
+    # def SwapTest(params, U_v, U_trot, init, p, backend, shots, filter):
+    #     """
 
-        """
-        circs = []
-        for param in params:
-            circs.append(SwapTestCircuit(param, U_v, U_trot, init, p))
-        res = SwapTestExecutor(circs, backend, shots, filter)
-        return abs(1 - np.array(res))
+    #     """
+    #     circs = []
+    #     for param in params:
+    #         circs.append(SwapTestCircuit(param, U_v, U_trot, init, p))
+    #     res = SwapTestExecutor(circs, backend, shots, filter)
+    #     return abs(1 - np.array(res))
 
     def LoschmidtEchoExecutor(circuits, backend, shots, filter):
         """
@@ -371,15 +403,16 @@ if __name__ == "__main__":
     meas_calibs, state_labels = complete_meas_cal(qr=qr, circlabel='mcal')
 
     device_backend = FakeSantiago()
-    device_sim = AerSimulator.from_backend(device_backend)
-    # noise_model = NoiseModel.from_backend(device_backend)
-    real_device = provider.get_backend('ibmq_manila')
-    # device_sim = QasmSimulator(method='statevector', noise_model=noise_model)
+    # device_sim = AerSimulator.from_backend(device_backend)
+    real_device = provider.get_backend('ibmq_santiago')
+    noise_model = NoiseModel.from_backend(real_device)
+
+    device_sim = QasmSimulator(method='statevector', noise_model=noise_model)
     exact_sim = Aer.get_backend('qasm_simulator') # QasmSimulator(method='statevector')
 
     t_qc = transpile(meas_calibs, device_sim)
     qobj = assemble(t_qc, shots=8192)
-    cal_results = real_device.run(qobj, shots=8192).result()
+    cal_results = device_sim.run(qobj, shots=8192).result()
     meas_fitter = CompleteMeasFitter(cal_results, state_labels, circlabel='mcal')
     # np.around(meas_fitter.cal_matrix, decimals=2)
 
@@ -393,5 +426,5 @@ if __name__ == "__main__":
     nt = int(np.ceil(tf / (dt * p)))
     f = open(f'./results_{L}/logging.txt', 'a')
     sys.stdout = f
-    VTC(tf, dt, p, init, real_device, shots, meas_fitter.filter)
+    VTC(tf, dt, p, init, device_sim, shots, meas_fitter.filter)
     f.close()
