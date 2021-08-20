@@ -72,19 +72,8 @@ if __name__ == "__main__":
                 sprs[j, j] = v(i) * v(k)
             _.append(sprs)    
         Heis.append(_)
-
-    def TrotterEvolve(tf, nt, init):
-        dt = tf / nt
-        UOdd = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(0, L, 2)]) / 4) # since Python indices start at 0, this is actually even
-        UEven = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(1, L, 2)]) / 4) # since Python indices start at 0, this is actually the odd indices
-        UTrotter = UEven @ UOdd
-        psi_trot = init
-        for i in range(nt):
-            psi_trot = UTrotter @ psi_trot
-        return psi_trot
-
     
-    H = sum([Heis[i][(i+1)%L] for i in range(L)]) / 4
+    H = sum([Heis[i][(i+1)%L] for i in range(L-1)]) / 4
     tf = 50
     dt = tf / 200
     Nt = int(tf / dt)
@@ -98,20 +87,16 @@ if __name__ == "__main__":
         # scipy.sparse.linalg.expm_multiply
         revos[i+1] = expm_multiply(-1j * H * dt, revos[i])
         # revos[i+1] = expm(-1j * H * dt) @ revos[i]
-    Szt = []
-    for i in range(len(revos)):
-        Szt.append(np.conj(revos[i]) @ Sz[0] @ revos[i] / 2)
-
 
     def Ansatz(params):
         # check for correct length of params
         psi_ansz = init
         for i in range(p): # len(params) // L
-            for j in range(0, L, 2):
+            for j in range(1, L-1, 2):
                 # odd first, then even. Apply to left
                 psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
                 # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
-            for j in range(1, L, 2):
+            for j in range(0, L-1, 2):
                 psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
                 # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
         return psi_ansz

@@ -88,36 +88,25 @@ if __name__ == "__main__":
     init = UnitVector(int(''.join(c), 2))
 
     def TrotterEvolve(dt, nt, init):
-        if (L % 2 == 0):
-            UOdd = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(0, L-1, 2)]) / 4) # 0 indexing, this is actually even indices
-            UEven = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(1, L, 2)]) / 4) # 0 indexing, this is actually the odd indices
-            UTrotter = UOdd @ UEven
-            # UZ = expm(-1j * dt * sum([diags(Heis[i][(i+2)%L].diagonal()) for i in range(L)]) / 2)
-            # UTrotter = UEven @ UOdd @ UZ
-        else:
-            UOdd = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(0, L-1, 2)]) / 4)
-            UEven = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(1, L, 2)]) / 4)
-            UBdy = expm(-1j * dt * Heis[L-1][0] / 4)
-            UTrotter = UBdy @ UOdd @ UEven
+        UOdd = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(0, L, 2)]) / 4) # since Python indices start at 0, this is actually even
+        UEven = expm(-1j * dt * sum([Heis[i][(i+1)%L] for i in range(1, L, 2)]) / 4) # since Python indices start at 0, this is actually the odd indices
+        UTrotter = UEven @ UOdd
         psi_trot = init
         for i in range(nt):
             psi_trot = UTrotter @ psi_trot
         return psi_trot
 
     def Ansatz(params, p):
+        # check for correct length of params
         psi_ansz = init
-        for i in range(p):
-            if (L % 2 == 0):
-                for j in range(1, L, 2):
-                    psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]/4, psi_ansz)
-                for j in range(0, L-1, 2):
-                    psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]/4, psi_ansz)
-            else:
-                for j in range(1, L, 2):
-                    psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]/4, psi_ansz)
-                for j in range(0, L-1, 2):
-                    psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]/4, psi_ansz)
-                psi_ansz = expm_multiply(-1j * params[(L*i)+L-1] * Heis[L-1][0]/4, psi_ansz)
+        for i in range(p): # len(params) // L
+            for j in range(0, L, 2):
+                # odd first, then even. Apply to left
+                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+            for j in range(1, L, 2):
+                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
         return psi_ansz
 
     def Fidelity(x, target, p):
@@ -140,7 +129,7 @@ if __name__ == "__main__":
         temp = TrotterEvolve(dt, p, temp)
         
         init_params = np.random.uniform(0, np.pi, L*p)
-        sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(temp, p))
+        sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(temp, p), tol=5e-3)
         temp = Ansatz(sol.x, p)
         VTDStepList.loc[ts[-1]+(dt*p)] = np.array(temp) 
         ts = VTDStepList.index
@@ -151,7 +140,7 @@ if __name__ == "__main__":
         if (ts[-1] >= tf):
             return
         else:
-            os.system(f'sbatch job-heis-did2.sh {L} {p} {tf} {dt}')
+            os.system(f'sbatch job-vtc-frank.sh {L} {p} {tf} {dt}')
 
     res = VTD(tf, dt, p, init)
 
