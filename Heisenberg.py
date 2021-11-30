@@ -73,7 +73,7 @@ if __name__ == "__main__":
             _.append(sprs)    
         Heis.append(_)
     
-    H = sum([Heis[i][(i+1)%L] for i in range(L-1)]) / 4
+    H = sum([Heis[i][(i+1)%L] for i in range(L-1)]) / 4 # L for PBC, L-1 for OBC
     tf = 50
     dt = tf / 200
     Nt = int(tf / dt)
@@ -84,21 +84,24 @@ if __name__ == "__main__":
     revos = [np.zeros(2**L) for i in range(Nt+1)]
     revos[0] = init
     for i in range(Nt):
-        # scipy.sparse.linalg.expm_multiply
         revos[i+1] = expm_multiply(-1j * H * dt, revos[i])
-        # revos[i+1] = expm(-1j * H * dt) @ revos[i]
 
     def Ansatz(params):
-        # check for correct length of params
         psi_ansz = init
-        for i in range(p): # len(params) // L
-            for j in range(1, L-1, 2):
-                # odd first, then even. Apply to left
+        # for i in range(p): # len(params) // L
+        #     for j in range(1, L-1, 2):
+        #         # odd first, then even. Apply to left
+        #         psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+        #         # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+        #     for j in range(0, L-1, 2):
+        #         psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+        #         # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+
+        
+        for i in range(p): # l
+            for j in range(0, L-1):
                 psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
-            for j in range(0, L-1, 2):
-                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
+
         return psi_ansz
 
     def Fidelity(x, target):
