@@ -103,10 +103,8 @@ if __name__ == "__main__":
             for j in range(0, L, 2):
                 # odd first, then even. Apply to left
                 psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
             for j in range(1, L, 2):
                 psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-                # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
         return psi_ansz
 
     def Fidelity(x, target, p):

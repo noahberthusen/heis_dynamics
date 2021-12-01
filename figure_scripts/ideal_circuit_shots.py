@@ -191,5 +191,5 @@ ax.tick_params(axis='x', labelsize=12)
 ax.tick_params(axis='y', labelsize=12)
 ax.legend(loc='lower left', fontsize=12)
 
-plt.savefig('../figures/final/shots_variation_L6', dpi=300, transparent=False, bbox_inches='tight')
+plt.savefig('../figures/final/shots_variation_L6', dpi=600, transparent=False, bbox_inches='tight')
 # plt.show()

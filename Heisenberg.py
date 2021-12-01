@@ -28,8 +28,6 @@ def Raise(n, i):
     else:
         return -1
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # Command line arguments
@@ -92,10 +90,8 @@ if __name__ == "__main__":
         #     for j in range(1, L-1, 2):
         #         # odd first, then even. Apply to left
         #         psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-        #         # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
         #     for j in range(0, L-1, 2):
         #         psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-        #         # psi_ansz = expm(-1j * params[(L*i)+j] * Heis[j][(j+1)%L]) @ psi_ansz
 
         
         for i in range(p): # l
