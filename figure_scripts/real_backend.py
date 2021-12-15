@@ -172,7 +172,7 @@ for i in range(2):
     ax[i].yaxis.set_tick_params(width=1.5)
     ax[i].margins(x=0.05, y=0)
     ax[i].set_xlim(0,20.3)
-    ax[i].set_ylabel(r'$\mathcal{F}(t,  \hat{\vartheta}^{(\ell)})$', fontsize=16)
+    ax[i].set_ylabel(r'$\mathcal{F}(t,  \hat{\vartheta}_t)$', fontsize=16)
     ax[i].axvspan(9, 21, facecolor='#9cce9c', alpha=0.2)
 
 

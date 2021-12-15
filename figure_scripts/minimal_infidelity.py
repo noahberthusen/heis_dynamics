@@ -72,7 +72,7 @@ for i in range(len(Ls)):
     ax[0].plot(np.array([j for j in range(1, len(Ls[i])+1)]), Ls[i], linewidth=2)
     ax[1].plot(np.array([j for j in range(1, len(LsHz[i])+1)]), LsHz[i], linewidth=2) 
 
-bounds = [1,2,3,4,5,6,7,8,9,10]
+bounds = [3,4,5,6,7,8,9,10]
 
 norm = matplotlib.colors.BoundaryNorm(bounds, cmap.N-16)
 cbar = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax[0])

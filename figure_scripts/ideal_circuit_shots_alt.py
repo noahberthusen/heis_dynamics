@@ -134,7 +134,8 @@ TrotterFidelity = [abs(np.conj(revos_[i]) @ TrotterFixStepList[i])**2 for i in r
 # -----------------------------------------------------------------------------------------
 
 ts = [i*ntrot*dtrot for i in range(int(np.ceil(tf / (ntrot * dtrot)))+1)]
-fig, ax = plt.subplots(1, 1, figsize=(6,3))
+fig, ax = plt.subplots(2, 1, figsize=(6.5,6.5))
+fig.tight_layout(pad=2)
 plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = ['Computer Modern Roman'] + plt.rcParams['font.serif']
 
@@ -147,16 +148,23 @@ def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=-1):
     return new_cmap
 
 fidelities = []
+VTDStepLists = []
 ii = np.array([2**i for i in range(14, 17)])
 for i in ii:
     if os.path.isfile(f'../results/VTD_results/shots_variation_loschmidt_6/VTD_results_{tf_vtc}_{L}_{ntrot}_{dtrot}_{i}.csv'):
         VTDStepList = pd.read_csv(f'../results/VTD_results/shots_variation_loschmidt_6/VTD_results_{tf_vtc}_{L}_{ntrot}_{dtrot}_{i}.csv', index_col=0)
         VTDStepList = VTDStepList.applymap(lambda x: complex(x))
-
+        VTDStepLists.append(VTDStepList)
         revos_ = [expm(-1j * H * t) @ init for t in ts]
 
         VTDFidelity = [abs(np.conj(revos_[i]) @ np.array(VTDStepList.iloc[i]))**2 for i in range(len(VTDStepList))]
         fidelities.append(VTDFidelity)
+
+BestCompression = [init]
+for i in range(len(VTDStepLists[-1])):
+    BestCompression.append(TrotterEvolve(dtrot, ntrot, VTDStepLists[-1].iloc[i]))
+BestCompressionFidelity = [abs(np.conj(revos_[i]) @ np.array(BestCompression[i]))**2 for i in range(len(BestCompression[1:]))]
+VTDBestCompressionFidelity = [abs(np.conj(BestCompression[i]) @ np.array(VTDStepLists[-1].iloc[i]))**2 for i in range(len(VTDStepLists[-1]))]
 
 color = matplotlib.cm.viridis
 color = truncate_colormap(color, 0.0, 0.8)
@@ -165,31 +173,49 @@ cmap = matplotlib.cm.ScalarMappable(norm=norm, cmap=color)
 
 bounds = [1,2,3,4,5,6,7,8]
 norm = matplotlib.colors.BoundaryNorm(bounds, color.N-20)
-cbar = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=color))
+cbar = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=color), ax=ax[0])
+cbar2 = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=color), ax=ax[1])
+cbar2.remove()
 
 cbar.set_ticks(bounds)
 cbar.set_ticklabels(['$2^{14}$','$2^{15}$','$2^{16}$'])
 cbar.ax.set_title('Samples', fontsize=11)
 cbar.set_ticks([1,4,8])
-ax.set_prop_cycle('color', [color(i) for i in np.linspace(0, 1, len(fidelities))])
+ax[0].set_prop_cycle('color', [color(i) for i in np.linspace(0, 1, len(fidelities))])
 
-ax.plot(ts, TrotterFidelity, c='#ff7f0e', label='Ideal VTC', linewidth=2)
-ax.plot([i*dt for i in range(len(revos))], BadTrotterFidelity, label='Trotter $(3\ell)$', c='#CDCDCD', zorder=0, linewidth=2)
-ax.axvspan(14.5, 29, facecolor='#9cce9c', alpha=0.2)
-ax.margins(x=0.05, y=0)
-ax.set_xlim(0,28.3)
+ax[0].plot(ts, TrotterFidelity, c='#ff7f0e', label='Ideal VTC', linewidth=2)
+ax[0].plot([i*dt for i in range(len(revos))], BadTrotterFidelity, label='Trotter $(3\ell)$', c='#CDCDCD', zorder=0, linewidth=2)
+ax[0].axvspan(14.5, 29, facecolor='#9cce9c', alpha=0.2)
+ax[0].margins(x=0.05, y=0)
+ax[0].set_xlim(0,28.3)
+
+ax[1].plot([i*dtrot*ntrot for i in range(len(fidelities[-1]))], fidelities[-1], linestyle='--', marker='.', c='g', linewidth=2, label="VTC")
+ax[1].plot(ts, TrotterFidelity, c='#ff7f0e', linewidth=2)
+ax[1].plot([i*dt for i in range(len(revos))], BadTrotterFidelity, c='#CDCDCD', zorder=0, linewidth=2)
+ax[1].axvspan(14.5, 29, facecolor='#9cce9c', alpha=0.2)
+ax[1].margins(x=0.05, y=0)
+ax[1].set_xlim(0,28.3)
+ax[1].scatter([i*dtrot*ntrot for i in range(len(BestCompressionFidelity))], BestCompressionFidelity, label="Best Compression", marker='x', c='k')
+ax[1].scatter([i*dtrot*ntrot for i in range(len(VTDBestCompressionFidelity))], VTDBestCompressionFidelity, label="VTC Overlap", marker='x', c='r')
+ax[1].legend(loc='lower left', fontsize=12)
 
 for i in range(len(fidelities)):
-    ax.plot([i*dtrot*ntrot for i in range(len(fidelities[i]))], fidelities[i], linestyle='--', marker='.', linewidth=2)
+    ax[0].plot([i*dtrot*ntrot for i in range(len(fidelities[i]))], fidelities[i], linestyle='--', marker='.', linewidth=2)
 
 for axis in ['top','bottom','left','right']:
-    ax.spines[axis].set_linewidth(1.3)
+    ax[0].spines[axis].set_linewidth(1.3)
+    ax[1].spines[axis].set_linewidth(1.3)
 
-ax.set_ylabel(r'$\mathcal{F}(t,  \hat{\vartheta}^{(\ell)})$', fontsize=16)
-ax.set_xlabel('$Jt$', fontsize=16)
-ax.tick_params(axis='x', labelsize=12)
-ax.tick_params(axis='y', labelsize=12)
-ax.legend(loc='lower left', fontsize=12)
+ax[0].set_ylabel(r'$\mathcal{F}(t,  \hat{\vartheta}_t)$', fontsize=16)
+ax[1].set_ylabel(r'$\mathcal{F}(t,  \hat{\vartheta}_t)$', fontsize=16)
 
-plt.savefig('../figures/final/shots_variation_L6', dpi=600, transparent=False, bbox_inches='tight')
+ax[1].set_xlabel('$Jt$', fontsize=16)
+ax[0].tick_params(axis='x', labelsize=12)
+ax[0].tick_params(axis='y', labelsize=12)
+ax[0].legend(loc='lower left', fontsize=12)
+
+plt.text(-0.02, 0.94, "(a)", fontsize=16, transform=plt.gcf().transFigure, fontfamily='sans-serif')
+plt.text(-0.02, 0.46, "(b)", fontsize=16, transform=plt.gcf().transFigure, fontfamily='sans-serif')
+
+plt.savefig('../figures/final/shots_variation_L6_alt', dpi=600, transparent=False, bbox_inches='tight')
 # plt.show()

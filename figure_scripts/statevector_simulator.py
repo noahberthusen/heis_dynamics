@@ -31,7 +31,7 @@ ax.axvspan(65, 150, facecolor='#9cce9c', alpha=0.2)
 ax.margins(x=0.05, y=0)
 ax.set_xlim(0,140)
 
-ax.set_ylabel(r'$\mathcal{F}(t,  \hat{\vartheta}^{(\ell)})$', fontsize=16)
+ax.set_ylabel(r'$\mathcal{F}(t,  \hat{\vartheta}_t)$', fontsize=16)
 ax.set_xlabel('$Jt$', fontsize=16)
 ax.tick_params(axis='x', labelsize=12)
 ax.tick_params(axis='y', labelsize=12)

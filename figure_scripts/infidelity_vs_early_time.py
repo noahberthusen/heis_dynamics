@@ -28,15 +28,15 @@ ee = np.array([[0, 0], [1/10, 0.0348518], [1/5, 0.110803], [3/10, 0.210377], [2/
   10, 1.77606], [8, 1.78903]])
 
 data = []
-ii = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,18]
+ii = np.arange(1,19).tolist()
 for i in ii:
     if os.path.isfile(f'../results/entanglement_results/8_pvstime/results_time_8_{i}.txt'):
         arr = np.loadtxt(f'../results/entanglement_results/8_pvstime/results_time_8_{i}.txt', delimiter=',')
         data.append(arr)
 
 l_star = []
-epsilon = 5e-3
-for i in range(0, 24): # loop over all times
+epsilon = 1e-4
+for i in range(0, 40): # loop over all times
     for d in range(len(data)): # loop over all l's
         if data[d][i][0] < epsilon:
             l_star.append(ii[d])
@@ -64,27 +64,29 @@ ax[1].set_xlabel('$Jt$', fontsize=16)
 ax[0].set_yscale('log')
 
 color = matplotlib.cm.viridis
-ax[0].set_prop_cycle('color', [color(i) for i in np.linspace(0, 0.8, 5)])
+ax[0].set_prop_cycle('color', [color(i) for i in np.linspace(0, 0.95, 4)])
 
-ells = [2,6,10,14,18] # <--- choose \ell's to show here 
+ells = [2,12,16,18] # <--- choose \ell's to show here 
 
 for d in [ii.index(l) for l in ells]: 
     ax[0].plot(data[d][:,1], data[d][:,0], '-', label=f'$\ell={ii[d]}$', markersize=3, linewidth=2)
-ax[0].axhline(5e-3, color='k', linestyle='--', linewidth=2)
+ax[0].axhline(5e-4, color='k', linestyle='--', linewidth=2)
 ax[0].legend(fontsize=12)
 
 def line(x, a, b):
     return a * x + b
-popt, pcov = curve_fit(line, [i*0.1 for i in range(0, 24)], l_star)
-xline = np.linspace(0,2.4,100)
+popt, pcov = curve_fit(line, [i*0.1 for i in range(0, 15)], l_star[:15])
+xline = np.linspace(0,1.5,100)
 ax[1].plot(xline, line(xline, popt[0], popt[1]), c='k', linewidth=2, linestyle='--', alpha=0.5)
-ax[1].scatter([i*0.1 for i in range(0, 24)], l_star, c='k')
+ax[1].scatter([i*0.1 for i, _ in enumerate(l_star)], l_star, c='k')
 ax[1].set_yscale('linear')
+ax[1].margins(x=0.05)
+ax[1].set_xlim(-0.1,4)
+ax[1].axvspan(1.5, 4, facecolor='k', alpha=0.05)
 
 inset_dim2 = [0.71, 0.13, 0.17, 0.15]
-
 ax3 = plt.axes(inset_dim2)
-ax3.patch.set_alpha(0)
+ax3.patch.set_alpha(1)
 ax3.plot(ee[:,0], ee[:,1], linestyle='-', c='k')
 ax3.set_xlabel('$Jt$', fontsize=11)
 ax3.set_ylabel(r'$S(\rho_A)$', fontsize=11)
