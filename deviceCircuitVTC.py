@@ -2,8 +2,9 @@ import numpy as np
 from qiskit import *
 from qiskit import Aer
 import pandas as pd
+from qiskit.providers.aer.noise.noise_model import NoiseModel
 from qiskit.test.mock import *
-from qiskit.providers.aer import AerSimulator
+from qiskit.providers.aer import AerSimulator, QasmSimulator
 from qiskit.ignis.mitigation.measurement import complete_meas_cal, CompleteMeasFitter
 import itertools
 import mitiq
@@ -12,8 +13,9 @@ import cma
 import os
 import sys
 from qiskit import IBMQ
-from qiskit.tools.monitor import job_monitor
 import pickle
+import random
+import re
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -30,6 +32,36 @@ if __name__ == "__main__":
     tf = args.t
     shots = args.s
 
+    def TwirlCircuit(circ):
+        def apply_pauli(num, qb):
+            if (num == 0):
+                return f'id q[{qb}];\n'
+            elif (num == 1):
+                return f'x q[{qb}];\n'
+            elif (num == 2):
+                return f'y q[{qb}];\n'
+            else:
+                return f'z q[{qb}];\n'
+
+        paulis = [(i,j) for i in range(0,4) for j in range(0,4)]
+        paulis.remove((0,0))
+        paulis_map = [(0, 1), (3, 2), (3, 3), (1, 1), (1, 0), (2, 3), (2, 2), (2, 1), (2, 0), (1, 3), (1, 2), (3, 0), (3, 1), (0, 2), (0, 3)]
+
+        new_circ = ''
+        ops = circ.qasm().splitlines(True)
+        for op in ops:
+            if (op[:2] == 'cx'): # can add for cz, etc.
+                num = random.randrange(len(paulis))
+                qbs = re.findall('q\[(.)\]', op)
+                new_circ += apply_pauli(paulis[num][0], qbs[0])
+                new_circ += apply_pauli(paulis[num][1], qbs[1])
+                new_circ += op
+                new_circ += apply_pauli(paulis_map[num][0], qbs[0])
+                new_circ += apply_pauli(paulis_map[num][1], qbs[1])
+            else:
+                new_circ += op
+        return qiskit.circuit.QuantumCircuit.from_qasm_str(new_circ)
+
     def TrotterEvolveCircuit(dt, nt, init):
         """
         Implements trotter evolution of the Heisenberg hamiltonian using the circuit from https://arxiv.org/pdf/1906.06343.pdf
@@ -43,16 +75,16 @@ if __name__ == "__main__":
         def get_angles(a):
             return (np.pi/2 - 2*a, 2*a - np.pi/2, np.pi/2 - 2*a)
 
-        def N(circ, qb0, qb1):
-            circ.rz(-np.pi/2, qb1)
-            circ.cnot(qb1, qb0)
-            circ.rz(theta, qb0)
-            circ.ry(phi, qb1)
-            circ.cnot(qb0, qb1)
-            circ.ry(lambd, qb1)
-            circ.cnot(qb1, qb0)
-            circ.rz(np.pi/2, qb0)
-            return circ
+        def N(cir, qb0, qb1):
+            cir.rz(-np.pi/2, qb1)
+            cir.cnot(qb1, qb0)
+            cir.rz(theta, qb0)
+            cir.ry(phi, qb1)
+            cir.cnot(qb0, qb1)
+            cir.ry(lambd, qb1)
+            cir.cnot(qb1, qb0)
+            cir.rz(np.pi/2, qb0)
+            return cir
 
         theta, phi, lambd = get_angles(-dt/4)
         circ = init
@@ -144,7 +176,7 @@ if __name__ == "__main__":
         backend = Aer.get_backend('statevector_simulator')
         return execute(circ, backend).result().get_statevector()
 
-    def SwapTestCircuit(params, U_v, U_trot, init, p):
+    # def SwapTestCircuit(params, U_v, U_trot, init, p):
         """
         Cost function using the swap test. 
         :param params: parameters new variational circuit that represents U_trot U_v | init >. Need dagger for cost function
@@ -182,7 +214,7 @@ if __name__ == "__main__":
 
         return circ
 
-    def SwapTestExecutor(circuits, backend, shots, filter):
+    # def SwapTestExecutor(circuits, backend, shots, filter):
         scale_factors = [1.0, 1.5, 2.0]
         folded_circuits = []
         for circuit in circuits:
@@ -220,8 +252,7 @@ if __name__ == "__main__":
 
         return zero_noise_values
 
-        
-    def SwapTest(params, U_v, U_trot, init, p, backend, shots, filter):
+    # def SwapTest(params, U_v, U_trot, init, p, backend, shots, filter):
         """
 
         """
@@ -239,11 +270,13 @@ if __name__ == "__main__":
         :param shots: Number of times to execute the circuit to compute the expectation value.
         :param fitter: measurement error mitigator
         """
-        scale_factors = [1.0, 1.5, 2.0]
+        # circuits = [TwirlCircuit(circ) for circ in circuits]
+        scale_factors = [1.0, 2.0, 3.0]
         folded_circuits = []
         for circuit in circuits:
             folded_circuits.append([mitiq.zne.scaling.fold_gates_at_random(circuit, scale) for scale in scale_factors])
         folded_circuits = list(itertools.chain(*folded_circuits))
+        folded_circuits = [TwirlCircuit(circ) for circ in folded_circuits]
 
         job = qiskit.execute(
             experiments=folded_circuits,
@@ -251,7 +284,6 @@ if __name__ == "__main__":
             optimization_level=0,
             shots=shots
         )
-        job_monitor(job)
 
         c = ['1','1','0']
         # c = [str((1 + (-1)**(i+1)) // 2) for i in range(L)]
@@ -275,7 +307,7 @@ if __name__ == "__main__":
         if isinstance(backend, qiskit.providers.aer.backends.qasm_simulator.QasmSimulator): # exact_sim
             for i in range(len(circuits)):
                 zero_noise_values.append(np.mean(expectation_values[i*len(scale_factors):(i+1)*len(scale_factors)]))
-        else: #device_sim
+        else: #device_sim, real_device
             fac = mitiq.zne.inference.LinearFactory(scale_factors)
             for i in range(len(circuits)):
                 zero_noise_values.append(fac.extrapolate(scale_factors, 
@@ -366,18 +398,21 @@ if __name__ == "__main__":
         else:
             os.system(f'python deviceCircuitVTC.py -L {L} -p {p} -t {tf} -d {dt} -s {shots}')
 
+    # IBMQ.load_account()
     provider = IBMQ.load_account()
+    # provider = IBMQ.get_provider(hub='ibm-q-research-2', group='iowa-state-uni-2', project='main')
     qr = QuantumRegister(L)
     meas_calibs, state_labels = complete_meas_cal(qr=qr, circlabel='mcal')
 
-    device_backend = FakeSantiago()
-    device_sim = AerSimulator.from_backend(device_backend)
-    # noise_model = NoiseModel.from_backend(device_backend)
-    real_device = provider.get_backend('ibmq_manila')
-    # device_sim = QasmSimulator(method='statevector', noise_model=noise_model)
+    # device_backend = FakeSantiago()
+    # device_sim = AerSimulator.from_backend(device_backend)
+    real_device = provider.get_backend('ibmq_santiago')
+    noise_model = NoiseModel.from_backend(real_device)
+
+    device_sim = QasmSimulator(method='statevector', noise_model=noise_model)
     exact_sim = Aer.get_backend('qasm_simulator') # QasmSimulator(method='statevector')
 
-    t_qc = transpile(meas_calibs, device_sim)
+    t_qc = transpile(meas_calibs)
     qobj = assemble(t_qc, shots=8192)
     cal_results = real_device.run(qobj, shots=8192).result()
     meas_fitter = CompleteMeasFitter(cal_results, state_labels, circlabel='mcal')
