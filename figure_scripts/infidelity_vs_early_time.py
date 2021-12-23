@@ -70,7 +70,7 @@ ells = [2,12,16,18] # <--- choose \ell's to show here
 
 for d in [ii.index(l) for l in ells]: 
     ax[0].plot(data[d][:,1], data[d][:,0], '-', label=f'$\ell={ii[d]}$', markersize=3, linewidth=2)
-ax[0].axhline(5e-4, color='k', linestyle='--', linewidth=2)
+ax[0].axhline(epsilon, color='k', linestyle='--', linewidth=2)
 ax[0].legend(fontsize=12)
 
 def line(x, a, b):
