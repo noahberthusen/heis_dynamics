@@ -3,11 +3,7 @@ import time
 import numpy as np
 from optimparallel import minimize_parallel
 from scipy.sparse import csc_matrix
-from scipy.sparse.linalg import eigs
-from numpy import linalg as LA
-from scipy.sparse.linalg import expm_multiply, expm
-#import matplotlib.pyplot as plt
-from scipy.optimize import minimize
+from scipy.sparse.linalg import expm_multiply
 import argparse
 
 def FlipFlop(n, i, j):

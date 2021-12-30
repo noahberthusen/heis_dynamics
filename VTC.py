@@ -1,12 +1,8 @@
 import numpy as np
 import pandas as pd
-from scipy.sparse import csc_matrix, diags
-from scipy.sparse.linalg import eigs, expm_multiply
-from numpy import linalg as LA
+from scipy.sparse import csc_matrix
+from scipy.sparse.linalg import expm_multiply
 from scipy.linalg import expm
-import matplotlib.pyplot as plt
-from scipy.optimize import minimize
-import time
 from optimparallel import minimize_parallel
 import argparse
 import os

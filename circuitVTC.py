@@ -3,15 +3,12 @@ from qiskit import *
 from qiskit import Aer
 import pandas as pd
 from qiskit.test.mock import *
-from qiskit.providers.aer import AerSimulator, QasmSimulator
-from qiskit.providers.aer.noise import NoiseModel, noise_model
+from qiskit.providers.aer import AerSimulator
 from qiskit.ignis.mitigation.measurement import complete_meas_cal, CompleteMeasFitter
 import itertools
 import mitiq
 import argparse
 import cma
-from optimparallel import minimize_parallel
-from scipy.optimize import minimize
 from qiskit import IBMQ
 
 if __name__ == "__main__":

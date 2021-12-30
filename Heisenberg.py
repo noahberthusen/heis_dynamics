@@ -3,11 +3,7 @@ import time
 import numpy as np
 from optimparallel import minimize_parallel
 from scipy.sparse import csc_matrix
-from scipy.sparse.linalg import eigs, expm_multiply
-from numpy import linalg as LA
-from scipy.sparse.linalg import expm_multiply, expm
-#import matplotlib.pyplot as plt
-from scipy.optimize import minimize
+from scipy.sparse.linalg import expm_multiply
 import argparse
 
 def FlipFlop(n, i, j):
@@ -86,17 +82,16 @@ if __name__ == "__main__":
 
     def Ansatz(params):
         psi_ansz = init
-        # for i in range(p): # len(params) // L
-        #     for j in range(1, L-1, 2):
-        #         # odd first, then even. Apply to left
-        #         psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-        #     for j in range(0, L-1, 2):
-        #         psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
-
-        
-        for i in range(p): # l
-            for j in range(0, L-1):
+        for i in range(p): # len(params) // L
+            for j in range(1, L-1, 2):
+                # odd first, then even. Apply to left
                 psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+            for j in range(0, L-1, 2):
+                psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
+        
+        # for i in range(p): # l
+        #     for j in range(0, L-1):
+        #         psi_ansz = expm_multiply(-1j * params[(L*i)+j] * Heis[j][(j+1)%L], psi_ansz)
 
         return psi_ansz
 
