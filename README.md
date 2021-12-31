@@ -21,13 +21,13 @@ All the codes used to create the figures in the paper are found in the **figure_
 
 ### Data Generation
 The main files to perform the algorithm detailed in the paper are described below. Generated data can be found in the **results** folder. The following files were designed to be ran on a computing cluster, and they may need to be modified to run on other systems. 
-* ```Heisenberg.py``` Calculates the minimal infidelity for a given system size $M$ and ansatz depth $\ell$. Used to generated the data in Fig. 6 in the paper.
-* ```Heisenberg-time.py``` Used to generate the data in Fig. 5(a)
+* ```Heisenberg.py``` Calculates the minimal infidelity for a given system size $M$, ansatz depth $\ell$, and a fixed time. Used to generated the data in Fig. 6 in the paper.
+* ```Heisenberg-time.py``` Calculates the minimal infidelity for a range of (early) times after specifying a system size and ansatz depth. Used to generate the data in Fig. 5(a)
 * ```VTC.py``` Ideal implementation of the VTC algorithm for a given system size $M$, ansatz depth $\ell$, final time $dt$, and Trotter step size $\tau$. Used to generate the data for Fig. 7.
 * ```circuitVTC.py``` Implementation of the VTC algorithm using circuits in Qiskit. In addition to the parameters above, the number of samples must be specified. Noiseless simulation as well as simulation with a noise model is possible. Used to generate data in Fig. 8 and Fig. 9(a).
 * ```deviceCircuitVTC.py``` Identical implementation to ```circuitVTC.py```, just using a real IBM quantum backend. Used to get data for Fig. 9(b).
 
 ### Support
-This material is based upon work supported by the National Science Foundation under Grant No. 2038010.
+This material is based upon work supported by the National Science Foundation under Grant No. DMR-2038010.
 
 <img width="100px" src="https://www.nsf.gov/images/logos/NSF_4-Color_bitmap_Logo.png">
