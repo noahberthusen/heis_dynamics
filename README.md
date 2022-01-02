@@ -1,4 +1,4 @@
-[![Paper](https://img.shields.io/badge/paper-arXiv%3A2103.01878-B31B1B.svg)](https://arxiv.org/abs/2112.12654)
+[![Paper](https://img.shields.io/badge/paper-arXiv%3A2112.12654-B31B1B.svg)](https://arxiv.org/abs/2112.12654)
 
 # Quantum dynamics simulations beyond the coherence time on NISQ hardware by variational Trotter compression
 
