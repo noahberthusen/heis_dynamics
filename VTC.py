@@ -33,11 +33,13 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--p", type=int, default=1, help="Number of ansatz steps")
     parser.add_argument("-t", "--t", type=int, default=20, help="Final time")
     parser.add_argument("-d", "--d", type=float, default=0.25, help="Trotter step size")
+    parser.add_argument("-e", "--e", type=float, default=5e-3, help="Optimization epsilon")
     args = parser.parse_args()
     L = args.L
     p = args.p
     dt = args.d
     tf = args.t
+    e = args.e
 
     Sz = []
     for i in range(L):
@@ -112,8 +114,8 @@ if __name__ == "__main__":
         TimeStep = [0]
         nt = int(np.ceil(tf / (dt * p)))
 
-        if (os.path.exists(f'./results_{L}/VTD_results_{tf}_{L}_{p}_{dt}.csv')):
-            VTDStepList = pd.read_csv(f'./results_{L}/VTD_results_{tf}_{L}_{p}_{dt}.csv', index_col=0)
+        if (os.path.exists(f'./results_{L}/VTD_results_{tf}_{L}_{p}_{dt}_{e}.csv')):
+            VTDStepList = pd.read_csv(f'./results_{L}/VTD_results_{tf}_{L}_{p}_{dt}_{e}.csv', index_col=0)
             VTDStepList = VTDStepList.applymap(lambda x: complex(x))
         else:
             VTDStepList = pd.DataFrame(np.array(VTDFixStep), index=np.array(TimeStep))
@@ -123,18 +125,18 @@ if __name__ == "__main__":
         temp = TrotterEvolve(dt, p, temp)
         
         init_params = np.random.uniform(0, np.pi, L*p)
-        sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(temp, p), tol=5e-3)
+        sol = minimize_parallel(fun=Fidelity, x0=init_params, args=(temp, p), tol=e)
         temp = Ansatz(sol.x, p)
         VTDStepList.loc[ts[-1]+(dt*p)] = np.array(temp) 
         ts = VTDStepList.index
 
 
-        VTDStepList.to_csv(f'./results_{L}/VTD_results_{tf}_{L}_{p}_{dt}.csv')
+        VTDStepList.to_csv(f'./results_{L}/VTD_results_{tf}_{L}_{p}_{dt}_{e}.csv')
 
         if (ts[-1] >= tf):
             return
         else:
-            os.system(f'sbatch job-vtc-frank.sh {L} {p} {tf} {dt}')
+            os.system(f'sbatch job-vtc-frank.sh {L} {p} {tf} {dt} {e}')
 
     res = VTD(tf, dt, p, init)
 
